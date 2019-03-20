@@ -7,7 +7,7 @@ dependencies:
   - coveralls
   - csmapi
   - gdal
-  - jinja
+  - jinja2
   - numpy
   - requests
   - scipy
