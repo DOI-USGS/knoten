@@ -4,30 +4,30 @@ os:
   - linux
   - osx
 
-  env:
-    - PYTHON_VERSION=3.5
-    - PYTHON_VERSION=3.6
-    - PYTHON_VERSION=3.7
+env:
+  - PYTHON_VERSION=3.5
+  - PYTHON_VERSION=3.6
+  - PYTHON_VERSION=3.7
 
-  before_install:
-    # We do this conditionally because it saves us some downloading if the
-    # version is the same.
-    - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
-        wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-      else
-        curl -o miniconda.sh  https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh;
-      fi
-    - bash miniconda.sh -b -p $HOME/miniconda
-    - export PATH="$HOME/miniconda/bin:$PATH"
-    - hash -r
-    - conda config --set always_yes yes --set changeps1 no
-    - conda update -q conda
-    # Useful for debugging any issues with conda
-    - conda info -a
-    # Create the env
-    - conda create -q -n test python=$PYTHON_VERSION
-    - source activate test
-    - conda env update -n test -f environment.yml
+before_install:
+  # We do this conditionally because it saves us some downloading if the
+  # version is the same.
+  - if [ "$TRAVIS_OS_NAME" == "linux" ]; then
+      wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+    else
+      curl -o miniconda.sh  https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh;
+    fi
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  # Useful for debugging any issues with conda
+  - conda info -a
+  # Create the env
+  - conda create -q -n test python=$PYTHON_VERSION
+  - source activate test
+  - conda env update -n test -f environment.yml
 
 script:
   - pytest knoten
