@@ -15,6 +15,7 @@ build:
 extra:
   channels:
     - conda-forge
+    - usgs-astrogeology
 
 requirements:
   build:
