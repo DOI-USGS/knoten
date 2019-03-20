@@ -35,6 +35,6 @@ script:
 after_success:
   - coveralls
   - conda deactivate
-  - conda install -y -c usgs-astrogeology csmapi
+  - conda config --add-channel usgs-astrogeology
   - conda install conda-build anaconda-client
   - conda build --token $CONDA_UPLOAD_TOKEN --python $PYTHON_VERSION -c conda-forge recipe
