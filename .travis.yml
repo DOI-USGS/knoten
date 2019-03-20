@@ -26,11 +26,14 @@ os:
     - conda info -a
     # Create the env
     - conda create -q -n test python=$PYTHON_VERSION
-    
+    - source activate test
+    - conda env update -n test -f environment.yml
+
 script:
   - pytest knoten
 
 after_success:
   - coveralls
+  - conda deactivate
   - conda install conda-build anaconda-client
-  - conda build --token $CONDA_UPLOAD_TOKEN --python $PYTHON_VERSION -c conda-forge -c menpo -c usgs-astrogeology conda
+  - conda build --token $CONDA_UPLOAD_TOKEN --python $PYTHON_VERSION -c conda-forge recipe

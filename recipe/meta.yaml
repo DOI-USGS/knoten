@@ -5,10 +5,10 @@ package:
   version: {{ data.get('version') }}
 
 source:
-  git_url: https://github.com/USGS-Astrogeology/knoten
+  path: ../
 
 build:
-  number : 0 # {{ GIT_DESCRIBE_NUMBER }}
+  number : 0 
   string: dev
   script: "{{ PYTHON }} -m pip install . --no-deps -vv"
 
