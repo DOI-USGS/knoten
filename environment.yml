@@ -1,0 +1,13 @@
+name: knoten
+channels:
+  - conda-forge
+  - usgs-astrogeology
+dependencies:
+  - python >= 3
+  - coveralls
+  - csmapi
+  - gdal
+  - jinja
+  - numpy
+  - requests
+  - scipy

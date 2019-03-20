@@ -4,80 +4,102 @@ import os
 
 from csmapi import csmapi
 import jinja2
-
-import numpy as np
-import scipy.stats
-import pyproj
-import gdal
 from gdal import ogr
-import pvl
+import numpy as np
+import pyproj
+import requests
+import scipy.stats
 
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, np.ndarray):
+            return obj.tolist()
+        elif isinstance(obj, datetime.date):
+            return obj.isoformat()
+        return json.JSONEncoder.default(self, obj)
 
-def generate_boundary(isize, nnodes=5, n_points=10):
-    '''
-    Generates a bounding box given a camera model
+def create_camera(label, url='http://pfeffer.wr.usgs.gov/api/1.0/pds/'):
+    """
+    Given an ALE supported label, create a CSM compliant ISD file. This func 
+    defaults to supporting PDS labels. The URL kwarg can be used to point
+    to the appropriate pfeffernusse endpoint for a given input data type.
 
     Parameters
     ----------
-    camera : object
-             csmapi generated camera model
+    label : str
+            The image label
+    
+    url : str
+          The service endpoint what is being acessed to generate an ISD.
 
-    nnodes : int
-             Not sure
+    Returns
+    -------
+    model : object
+            A CSM sensor model (or None if no associated model is available.)
+    """
+    data = json.dumps(label, cls=NumpyEncoder)
+    response = requests.post(url, data=data)
+    fname = ''
+    with open(fname, 'w') as f:
+        json.dump(response.json(), f)
+    isd = csmapi.Isd(fname)
+    
+    plugin = csmapi.Plugin.findPlugin('UsgsAstroPluginCSM')
 
-    n_points : int
+    model_name = response.json()['name_model']
+    if plugin.canModelBeConstructedFromISD(isd, model_name):
+        model = plugin.constructModelFromISD(isd, model_name)
+        return model
+
+def generate_boundary(isize, npoints=10):
+    '''
+    Generates a bounding box given a camera model
+    Parameters
+    ----------
+    isize : list
+            image size in the form xsize, ysize
+    npoints : int
                Number of points to generate between the corners of the bounding
                box per side.
-
     Returns
     -------
     boundary : list
                List of full bounding box
     '''
-    x = np.linspace(0, isize[0], n_points)
-    y = np.linspace(0, isize[1], n_points)
+    x = np.linspace(0, isize[0], npoints)
+    y = np.linspace(0, isize[1], npoints)
     boundary = [(i,0.) for i in x] + [(isize[0], i) for i in y[1:]] +\
                [(i, isize[1]) for i in x[::-1][1:]] + [(0.,i) for i in y[::-1][1:]]
 
     return boundary
 
-def generate_latlon_boundary(camera, nnodes=5, semi_major=3396190, semi_minor=3376200, n_points=10):
+def generate_latlon_boundary(camera, boundary, semi_major=3396190, semi_minor=3376200):
     '''
     Generates a latlon bounding box given a camera model
-
     Parameters
     ----------
     camera : object
              csmapi generated camera model
-
+    boundary : list
+               of boundary coordinates
     nnodes : int
              Not sure
-
     semi_major : int
                  Semimajor axis of the target body
-
     semi_minor : int
                  Semiminor axis of the target body
-
     n_points : int
                Number of points to generate between the corners of the bounding
                box per side.
-
     Returns
     -------
     lons : list
            List of longitude values
-
     lats : list
            List of latitude values
-
     alts : list
            List of altitude values
     '''
-    isize = camera.getImageSize()
-    isize = (isize.line, isize.samp)
-
-    boundary = generate_boundary(isize, nnodes=nnodes, n_points = n_points)
 
     ecef = pyproj.Proj(proj='geocent', a=semi_major, b=semi_minor)
     lla = pyproj.Proj(proj='latlon', a=semi_major, b=semi_minor)
@@ -96,38 +118,33 @@ def generate_latlon_boundary(camera, nnodes=5, semi_major=3396190, semi_minor=33
     lons, lats, alts = pyproj.transform(ecef, lla, gnds[:,0], gnds[:,1], gnds[:,2])
     return lons, lats, alts
 
-def generate_gcps(camera, nnodes=5, semi_major=3396190, semi_minor=3376200, n_points=10):
+def generate_gcps(camera, boundary, semi_major=3396190, semi_minor=3376200):
     '''
     Generates an area of ground control points formated as:
     <GCP Id="" Info="" Pixel="" Line="" X="" Y="" Z="" /> per record
-
     Parameters
     ----------
     camera : object
              csmapi generated camera model
-
+    boundary : list
+               of image boundary coordinates
     nnodes : int
              Not sure
-
     semi_major : int
                  Semimajor axis of the target body
-
     semi_minor : int
                  Semiminor axis of the target body
-
     n_points : int
                Number of points to generate between the corners of the bounding
                box per side.
-
     Returns
     -------
     gcps : list
            List of all gcp records generated
     '''
-    lons, lats, alts = generate_latlon_boundary(camera, nnodes=nnodes,
+    lons, lats, alts = generate_latlon_boundary(camera, boundary,
                                                 semi_major=semi_major,
-                                                semi_minor=semi_minor,
-                                                n_points=n_points)
+                                                semi_minor=semi_minor)
 
     lla = np.vstack((lons, lats, alts)).T
 
@@ -140,40 +157,33 @@ def generate_gcps(camera, nnodes=5, semi_major=3396190, semi_minor=3376200, n_po
 
     return gcps
 
-def generate_latlon_footprint(camera, nnodes=5, semi_major=3396190, semi_minor=3376200, n_points=10):
+def generate_latlon_footprint(camera, boundary, semi_major=3396190, semi_minor=3376200):
     '''
     Generates a latlon footprint from a csmapi generated camera model
-
     Parameters
     ----------
     camera : object
              csmapi generated camera model
-
     nnodes : int
              Not sure
-
     semi_major : int
                  Semimajor axis of the target body
-
     semi_minor : int
                  Semiminor axis of the target body
-
     n_points : int
                Number of points to generate between the corners of the bounding
                box per side.
-
     Returns
     -------
     : object
       ogr multipolygon containing between one and two polygons
     '''
-    lons, lats, _ = generate_latlon_boundary(camera, nnodes=nnodes,
-                                                semi_major=semi_major,
-                                                semi_minor=semi_minor,
-                                                n_points=n_points)
+    lons, lats, _ = generate_latlon_boundary(camera, boundary,
+                                             semi_major=semi_major,
+                                             semi_minor=semi_minor)
 
     # Transform coords from -180, 180 to 0, 360
-    # Makes crossing the maridian easier to identify
+    # Makes crossing the meridian easier to identify
     ll_coords = [*zip(((lons + 180) % 360), lats)]
 
     ring = ogr.Geometry(ogr.wkbLinearRing)
@@ -185,7 +195,7 @@ def generate_latlon_footprint(camera, nnodes=5, semi_major=3396190, semi_minor=3
     multipoly = ogr.Geometry(ogr.wkbMultiPolygon)
 
     current_ring = ring
-    switch_point = None
+    switch_point = (None, None)
     previous_point = ll_coords[0]
 
     for coord in ll_coords:
@@ -225,28 +235,24 @@ def generate_latlon_footprint(camera, nnodes=5, semi_major=3396190, semi_minor=3
 
     return multipoly
 
-def generate_bodyfixed_footprint(camera, nnodes=5, semi_major=3396190, semi_minor=3376200, n_points=10):
+def generate_bodyfixed_footprint(camera, boundary, semi_major=3396190, semi_minor=3376200):
     '''
     Generates a bodyfixed footprint from a csmapi generated camera model
-
     Parameters
     ----------
     camera : object
              csmapi generated camera model
-
     nnodes : int
              Not sure
-
     n_points : int
                Number of points to generate between the corners of the bounding
                box per side.
-
     Returns
     -------
     : object
       ogr polygon
     '''
-    latlon_fp = generate_latlon_footprint(camera, nnodes=5, semi_major = semi_major, semi_minor = semi_minor, n_points = n_points)
+    latlon_fp = generate_latlon_footprint(camera, boundary, semi_major = semi_major, semi_minor = semi_minor)
 
     ecef = pyproj.Proj(proj='geocent', a=semi_major, b=semi_minor)
     lla = pyproj.Proj(proj='latlon', a=semi_major, b=semi_minor)
@@ -265,15 +271,45 @@ def generate_bodyfixed_footprint(camera, nnodes=5, semi_major=3396190, semi_mino
 
     return latlon_fp
 
-def generate_vrt(camera, raster_size, fpath, outpath=None, no_data_value=0):
-    gcps = generate_gcps(camera)
-    xsize, ysize = raster_size
+def generate_vrt(raster_size, gcps, fpath,
+                 no_data_value=0, 
+                 proj='+proj=longlat +a=3396190 +b=3376200 +no_defs'):
+    """
+    Create a GDAl VRT string from a list of ground control points and
+    a projection.
 
-    if outpath is None:
-        outpath = os.path.dirname(fpath)
-    outname = os.path.splitext(os.path.basename(fpath))[0] + '.vrt'
-    outname = os.path.join(outpath, outname)
+    Parameters
+    ----------
+    raster_size : iterable
+                  in the form xsize, ysize
 
+    gcps : list
+           of GCPs (likely created by the generate_gcp function)
+    
+    fpath : str
+            path to the source file that the VRT points to
+
+    no_data_value : numeric
+                    the no data value for the VRT (default=0)
+    
+    proj : str
+           A proj4 projection string for the VRT.
+
+    Returns
+    -------
+    template : str
+               The rendered VRT string
+
+    Example
+    --------
+    >>> camera = create_camera(label)  # Get a camera
+    >>> boundary = generate_boundary((100,100), 10)  # Compute the boundary points in image space
+    >>> gcps = generate_gcps(camera, boundary)  # Generate GCPs using the boundary in lat/lon
+    >>> vrt = generate_vrt((100,100), gcps, 'my_original_image.img')  # Create the vrt
+    >>> # Then optionally, warp the VRT to render to disk
+    >>> warp_options = gdal.WarpOptions(format='VRT', dstNodata=0)
+    >>> gdal.Warp(some_output.tif, vrt, options=warp_options)
+    """
     xsize, ysize = raster_size
     vrt = r'''<VRTDataset rasterXSize="{{ xsize }}" rasterYSize="{{ ysize }}">
      <Metadata/>
@@ -303,6 +339,6 @@ def generate_vrt(camera, raster_size, fpath, outpath=None, no_data_value=0):
                'fpath':fpath,
                'no_data_value':no_data_value}
     template = jinja2.Template(vrt)
-    tmp = template.render(context)
-    warp_options = gdal.WarpOptions(format='VRT', dstNodata=0)
-    gdal.Warp(outname, tmp, options=warp_options)
+    return template.render(context)
+    
+
