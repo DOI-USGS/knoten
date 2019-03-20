@@ -9,5 +9,6 @@ dependencies:
   - gdal
   - jinja2
   - numpy
+  - pytest
   - requests
   - scipy
