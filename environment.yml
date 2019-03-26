@@ -10,5 +10,6 @@ dependencies:
   - jinja2
   - numpy
   - pytest
+  - pyproj
   - requests
   - scipy
