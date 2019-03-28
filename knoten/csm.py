@@ -20,7 +20,7 @@ class NumpyEncoder(json.JSONEncoder):
 
 def create_camera(label, url='http://pfeffer.wr.usgs.gov/api/1.0/pds/'):
     """
-    Given an ALE supported label, create a CSM compliant ISD file. This func 
+    Given an ALE supported label, create a CSM compliant ISD file. This func
     defaults to supporting PDS labels. The URL kwarg can be used to point
     to the appropriate pfeffernusse endpoint for a given input data type.
 
@@ -28,7 +28,7 @@ def create_camera(label, url='http://pfeffer.wr.usgs.gov/api/1.0/pds/'):
     ----------
     label : str
             The image label
-    
+
     url : str
           The service endpoint what is being acessed to generate an ISD.
 
@@ -43,13 +43,37 @@ def create_camera(label, url='http://pfeffer.wr.usgs.gov/api/1.0/pds/'):
     with open(fname, 'w') as f:
         json.dump(response.json(), f)
     isd = csmapi.Isd(fname)
-    
+
     plugin = csmapi.Plugin.findPlugin('UsgsAstroPluginCSM')
 
     model_name = response.json()['name_model']
     if plugin.canModelBeConstructedFromISD(isd, model_name):
         model = plugin.constructModelFromISD(isd, model_name)
         return model
+
+def create_csm(image):
+    """
+    Given an image file create a Community Sensor Model.
+
+    Parameters
+    ----------
+    image : str
+            The image filename to create a CSM for
+
+    Returns
+    -------
+    model : object
+            A CSM sensor model (or None if no associated model is available.)
+    """
+    isd = csmapi.Isd(image)
+    plugins = csmapi.Plugin.getList()
+    for plugin in plugins:
+        num_models = plugin.getNumModels()
+        for model_index in range(num_models):
+            model_name = plugin.getModelName(model_index)
+            if plugin.canModelBeConstructedFromISD(isd, model_name):
+                return plugin.constructModelFromISD(isd, model_name)
+
 
 def generate_boundary(isize, npoints=10):
     '''
@@ -272,7 +296,7 @@ def generate_bodyfixed_footprint(camera, boundary, semi_major=3396190, semi_mino
     return latlon_fp
 
 def generate_vrt(raster_size, gcps, fpath,
-                 no_data_value=0, 
+                 no_data_value=0,
                  proj='+proj=longlat +a=3396190 +b=3376200 +no_defs'):
     """
     Create a GDAl VRT string from a list of ground control points and
@@ -285,13 +309,13 @@ def generate_vrt(raster_size, gcps, fpath,
 
     gcps : list
            of GCPs (likely created by the generate_gcp function)
-    
+
     fpath : str
             path to the source file that the VRT points to
 
     no_data_value : numeric
                     the no data value for the VRT (default=0)
-    
+
     proj : str
            A proj4 projection string for the VRT.
 
@@ -340,5 +364,3 @@ def generate_vrt(raster_size, gcps, fpath,
                'no_data_value':no_data_value}
     template = jinja2.Template(vrt)
     return template.render(context)
-    
-
