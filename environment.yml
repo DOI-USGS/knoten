@@ -13,3 +13,4 @@ dependencies:
   - pyproj
   - requests
   - scipy
+  - matplotlib
