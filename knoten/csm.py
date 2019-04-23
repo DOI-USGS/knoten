@@ -100,6 +100,7 @@ def generate_boundary(isize, npoints=10):
 def generate_latlon_boundary(camera, boundary, semi_major=3396190, semi_minor=3376200):
     '''
     Generates a latlon bounding box given a camera model
+
     Parameters
     ----------
     camera : object
@@ -359,7 +360,7 @@ def generate_vrt(raster_size, gcps, fpath,
 
     context = {'xsize':xsize, 'ysize':ysize,
                'gcps':gcps,
-               'proj':'+proj=longlat +a=3396190 +b=3376200 +no_defs',
+               'proj':proj,
                'fpath':fpath,
                'no_data_value':no_data_value}
     template = jinja2.Template(vrt)
