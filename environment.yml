@@ -14,3 +14,4 @@ dependencies:
   - requests
   - scipy
   - matplotlib
+  - shapely
