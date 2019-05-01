@@ -74,7 +74,6 @@ def create_csm(image):
             if plugin.canModelBeConstructedFromISD(isd, model_name):
                 return plugin.constructModelFromISD(isd, model_name)
 
-
 def generate_boundary(isize, npoints=10):
     '''
     Generates a bounding box given a camera model
@@ -97,7 +96,7 @@ def generate_boundary(isize, npoints=10):
 
     return boundary
 
-def generate_latlon_boundary(camera, boundary, semi_major=3396190, semi_minor=3376200):
+def generate_latlon_boundary(camera, boundary, semi_major=None, semi_minor=None):
     '''
     Generates a latlon bounding box given a camera model
 
@@ -106,16 +105,13 @@ def generate_latlon_boundary(camera, boundary, semi_major=3396190, semi_minor=33
     camera : object
              csmapi generated camera model
     boundary : list
-               of boundary coordinates
-    nnodes : int
-             Not sure
-    semi_major : int
-                 Semimajor axis of the target body
-    semi_minor : int
-                 Semiminor axis of the target body
-    n_points : int
-               Number of points to generate between the corners of the bounding
-               box per side.
+               of boundary image coordinates
+    semi_major : float
+                 Semimajor axis of the target body in meters.
+                 If not entered, the semi_major radius of the model is used
+    semi_minor : float
+                 Semiminor axis of the target body in meters.
+                 If not entered, the semi_minor radius of the model is used
     Returns
     -------
     lons : list
@@ -125,6 +121,13 @@ def generate_latlon_boundary(camera, boundary, semi_major=3396190, semi_minor=33
     alts : list
            List of altitude values
     '''
+
+    if not semi_major:
+        ellipse = csmapi.SettableEllipsoid.getEllipsoid(camera)
+        semi_major = ellipse.getSemiMajorRadius()
+    if not semi_minor:
+        ellipse = csmapi.SettableEllipsoid.getEllipsoid(camera)
+        semi_minor = ellipse.getSemiMinorRadius()
 
     ecef = pyproj.Proj(proj='geocent', a=semi_major, b=semi_minor)
     lla = pyproj.Proj(proj='latlon', a=semi_major, b=semi_minor)
