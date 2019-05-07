@@ -18,6 +18,26 @@ class NumpyEncoder(json.JSONEncoder):
             return obj.isoformat()
         return json.JSONEncoder.default(self, obj)
 
+def get_radii(camera):
+    """
+    Given a sensor model, get the ellipsoid and return
+    the semi major and semi_minor radii.
+
+    Parameters
+    ----------
+    camera : object
+             A CSM compliant sensor model object
+
+    Returns
+    -------
+     : tuple
+       in the form (semi_major, semi_minor)
+    """
+    ellipsoid = csmapi.SettableEllipsoid.getEllipsoid(camera)
+    semi_major = ellipsoid.getSemiMajorRadius()
+    semi_minor = ellipsoid.getSemiMinorRadius()
+    return semi_major, semi_minor
+
 def create_camera(label, url='http://pfeffer.wr.usgs.gov/api/1.0/pds/'):
     """
     Given an ALE supported label, create a CSM compliant ISD file. This func
@@ -96,7 +116,7 @@ def generate_boundary(isize, npoints=10):
 
     return boundary
 
-def generate_latlon_boundary(camera, boundary, semi_major=None, semi_minor=None):
+def generate_latlon_boundary(camera, boundary, radii=None):
     '''
     Generates a latlon bounding box given a camera model
 
@@ -106,12 +126,10 @@ def generate_latlon_boundary(camera, boundary, semi_major=None, semi_minor=None)
              csmapi generated camera model
     boundary : list
                of boundary image coordinates
-    semi_major : float
-                 Semimajor axis of the target body in meters.
-                 If not entered, the semi_major radius of the model is used
-    semi_minor : float
-                 Semiminor axis of the target body in meters.
-                 If not entered, the semi_minor radius of the model is used
+    radii : tuple
+            in the form (semimajor, semiminor) axes in meters. The default
+            None, will attempt to get the radii from the camera object.
+ 
     Returns
     -------
     lons : list
@@ -121,13 +139,10 @@ def generate_latlon_boundary(camera, boundary, semi_major=None, semi_minor=None)
     alts : list
            List of altitude values
     '''
-
-    if not semi_major:
-        ellipse = csmapi.SettableEllipsoid.getEllipsoid(camera)
-        semi_major = ellipse.getSemiMajorRadius()
-    if not semi_minor:
-        ellipse = csmapi.SettableEllipsoid.getEllipsoid(camera)
-        semi_minor = ellipse.getSemiMinorRadius()
+    if radii is None:
+        semi_major, semi_minor = get_radii(camera)
+    else:
+        semi_major, semi_minor = radii
 
     ecef = pyproj.Proj(proj='geocent', a=semi_major, b=semi_minor)
     lla = pyproj.Proj(proj='latlon', a=semi_major, b=semi_minor)
@@ -146,7 +161,7 @@ def generate_latlon_boundary(camera, boundary, semi_major=None, semi_minor=None)
     lons, lats, alts = pyproj.transform(ecef, lla, gnds[:,0], gnds[:,1], gnds[:,2])
     return lons, lats, alts
 
-def generate_gcps(camera, boundary, semi_major=3396190, semi_minor=3376200):
+def generate_gcps(camera, boundary, radii=None):
     '''
     Generates an area of ground control points formated as:
     <GCP Id="" Info="" Pixel="" Line="" X="" Y="" Z="" /> per record
@@ -170,9 +185,12 @@ def generate_gcps(camera, boundary, semi_major=3396190, semi_minor=3376200):
     gcps : list
            List of all gcp records generated
     '''
-    lons, lats, alts = generate_latlon_boundary(camera, boundary,
-                                                semi_major=semi_major,
-                                                semi_minor=semi_minor)
+    if radii is None:
+        semi_major, semi_minor = get_radii(camera)
+    else:
+        semi_major, semi_minor = radii
+
+    lons, lats, alts = generate_latlon_boundary(camera, boundary, radii=radii)
 
     lla = np.vstack((lons, lats, alts)).T
 
@@ -185,7 +203,7 @@ def generate_gcps(camera, boundary, semi_major=3396190, semi_minor=3376200):
 
     return gcps
 
-def generate_latlon_footprint(camera, boundary, semi_major=3396190, semi_minor=3376200):
+def generate_latlon_footprint(camera, boundary, radii=None):
     '''
     Generates a latlon footprint from a csmapi generated camera model
     Parameters
@@ -206,9 +224,12 @@ def generate_latlon_footprint(camera, boundary, semi_major=3396190, semi_minor=3
     : object
       ogr multipolygon containing between one and two polygons
     '''
-    lons, lats, _ = generate_latlon_boundary(camera, boundary,
-                                             semi_major=semi_major,
-                                             semi_minor=semi_minor)
+    if radii is None:
+        semi_major, semi_minor = get_radii(camera)
+    else:
+        semi_major, semi_minor = radii
+
+    lons, lats, _ = generate_latlon_boundary(camera, boundary, radii=radii)
 
     # Transform coords from -180, 180 to 0, 360
     # Makes crossing the meridian easier to identify
@@ -263,7 +284,7 @@ def generate_latlon_footprint(camera, boundary, semi_major=3396190, semi_minor=3
 
     return multipoly
 
-def generate_bodyfixed_footprint(camera, boundary, semi_major=3396190, semi_minor=3376200):
+def generate_bodyfixed_footprint(camera, boundary, radii=None):
     '''
     Generates a bodyfixed footprint from a csmapi generated camera model
     Parameters
@@ -280,7 +301,12 @@ def generate_bodyfixed_footprint(camera, boundary, semi_major=3396190, semi_mino
     : object
       ogr polygon
     '''
-    latlon_fp = generate_latlon_footprint(camera, boundary, semi_major = semi_major, semi_minor = semi_minor)
+    if radii is None:
+        semi_major, semi_minor = get_radii(camera)
+    else:
+        semi_major, semi_minor = radii
+        
+    latlon_fp = generate_latlon_footprint(camera, boundary, radii=radii)
 
     ecef = pyproj.Proj(proj='geocent', a=semi_major, b=semi_minor)
     lla = pyproj.Proj(proj='latlon', a=semi_major, b=semi_minor)
