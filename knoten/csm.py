@@ -1,11 +1,14 @@
 import datetime
+from functools import singledispatch, update_wrapper
 import json
 import os
 
 from csmapi import csmapi
-import jinja2
+
 from gdal import ogr
 import numpy as np
+from plio.io.io_gdal import GeoDataSet
+import pvl
 import pyproj
 import requests
 import scipy.stats
@@ -18,192 +21,128 @@ class NumpyEncoder(json.JSONEncoder):
             return obj.isoformat()
         return json.JSONEncoder.default(self, obj)
 
-def get_radii(camera):
-    """
-    Given a sensor model, get the ellipsoid and return
-    the semi major and semi_minor radii.
 
-    Parameters
-    ----------
-    camera : object
-             A CSM compliant sensor model object
+def methodispatch(func):
+    dispatcher = singledispatch(func)
+    def wrapper(*args, **kw):
+        return dispatcher.dispatch(args[1].__class__)(*args, **kw)
+    wrapper.register = dispatcher.register
+    update_wrapper(wrapper, func)
+    return wrapper
 
-    Returns
-    -------
-     : tuple
-       in the form (semi_major, semi_minor)
-    """
-    ellipsoid = csmapi.SettableEllipsoid.getEllipsoid(camera)
-    semi_major = ellipsoid.getSemiMajorRadius()
-    semi_minor = ellipsoid.getSemiMinorRadius()
-    return semi_major, semi_minor
 
-def create_camera(label, url='http://pfeffer.wr.usgs.gov/api/1.0/pds/'):
-    """
-    Given an ALE supported label, create a CSM compliant ISD file. This func
-    defaults to supporting PDS labels. The URL kwarg can be used to point
-    to the appropriate pfeffernusse endpoint for a given input data type.
+class Sensor(object):
+    def __init__(self, image):
+        isd = csmapi.Isd(image)
+        plugins = csmapi.Plugin.getList()
+        for plugin in plugins:
+            num_models = plugin.getNumModels()
+            for model_index in range(num_models):
+                model_name = plugin.getModelName(model_index)
+                if plugin.canModelBeConstructedFromISD(isd, model_name):
+                    self.model = plugin.constructModelFromISD(isd, model_name)
 
-    Parameters
-    ----------
-    label : str
-            The image label
+    @classmethod
+    def request_isd(cls, image, url='http://pfeffer.wr.usgs.gov/api/1.0/pds/')
+        """
+        Instantiate a CSM sensor model by first requesting an ISD from a remote
+        service and writing the ISD to a json file adjacent to the passed image.
 
-    url : str
-          The service endpoint what is being acessed to generate an ISD.
+        The image is opened and the method attempts to parse the label using the
+        PVL library. The label is then encoded and passed to the service.
 
-    Returns
-    -------
-    model : object
-            A CSM sensor model (or None if no associated model is available.)
-    """
-    data = json.dumps(label, cls=NumpyEncoder)
-    response = requests.post(url, data=data)
-    fname = ''
-    with open(fname, 'w') as f:
-        json.dump(response.json(), f)
-    isd = csmapi.Isd(fname)
+        Parameters
+        ----------
+        image : str
+                path to the image file
 
-    plugin = csmapi.Plugin.findPlugin('UsgsAstroPluginCSM')
+        url : str
+              The URL of thge remote service used to generate an ISD.
+        """
+        label = pvl.dumps(image).decode()
+        image = json.dumps(label, cls=NumpyEncoder)
+        response = requests.post(url, data=image)
+        fname = os.path.splitext(image)[0] + '.json'
+        with open(fname, 'w') as f:
+            json.dump(response.json(), f)
+        
+        return cls(image)
 
-    model_name = response.json()['name_model']
-    if plugin.canModelBeConstructedFromISD(isd, model_name):
-        model = plugin.constructModelFromISD(isd, model_name)
-        return model
+    @property
+    def semimajor_radii(self):
+        ellipsoid = csmapi.SettableEllipsoid.getEllipsoid(self.model)
+        return ellipsoid.getSemiMajorRadius()
 
-def create_csm(image):
-    """
-    Given an image file create a Community Sensor Model.
+    @property
+    def semiminor_radii(self):
+        ellipsoid = csmapi.SettableEllipsoid.getEllipsoid(self.model)
+        return ellipsoid.getSemiMinorRadius()
 
-    Parameters
-    ----------
-    image : str
-            The image filename to create a CSM for
+    @methodispatch
+    def intersect(self, height, image_pt):
+        if not isinstance(image_pt, csmapi.ImageCoord):
+            image_pt = csmapi.ImageCoord(*image_pt)
+        return self.model.imageToGround(image_pt, height)
 
-    Returns
-    -------
-    model : object
-            A CSM sensor model (or None if no associated model is available.)
-    """
-    isd = csmapi.Isd(image)
-    plugins = csmapi.Plugin.getList()
-    for plugin in plugins:
-        num_models = plugin.getNumModels()
-        for model_index in range(num_models):
-            model_name = plugin.getModelName(model_index)
-            if plugin.canModelBeConstructedFromISD(isd, model_name):
-                return plugin.constructModelFromISD(isd, model_name)
+    @intersect.register(GeoDataset)
+    def _(self, dem, image_pt, tolerance=1, max_its=20):
+        if not isinstance(image_pt, csmapi.ImageCoord):
+            # Support a call where image_pt is in the form (x,y)
+            image_pt = csmapi.ImageCoord(*image_pt)
 
-def generate_boundary(isize, npoints=10):
-    '''
-    Generates a bounding box given a camera model
-    Parameters
-    ----------
-    isize : list
-            image size in the form xsize, ysize
-    npoints : int
-               Number of points to generate between the corners of the bounding
-               box per side.
-    Returns
-    -------
-    boundary : list
-               List of full bounding box
-    '''
-    x = np.linspace(0, isize[0], npoints)
-    y = np.linspace(0, isize[1], npoints)
-    boundary = [(i,0.) for i in x] + [(isize[0], i) for i in y[1:]] +\
-               [(i, isize[1]) for i in x[::-1][1:]] + [(0.,i) for i in y[::-1][1:]]
+        intersection = self.camera.imageToGround(image_pt, 0.0)
+        iterations = 0
+        while iterations < max_its:
+            height = 
+            next_intersection = camera.imageToGround(image_pt, height)
+            dist = max(abs(intersection.x - next_intersection.x),
+                    abs(intersection.y - next_intersection.y),
+                    abs(intersextion.z - next_intersection.z))
 
-    return boundary
+            intersection = next_intersection
+            if dist < tolerance:
+                return intersection
+            iteration += 1
 
-def generate_latlon_boundary(camera, boundary, radii=None):
-    '''
-    Generates a latlon bounding box given a camera model
 
-    Parameters
-    ----------
-    camera : object
-             csmapi generated camera model
-    boundary : list
-               of boundary image coordinates
-    radii : tuple
-            in the form (semimajor, semiminor) axes in meters. The default
-            None, will attempt to get the radii from the camera object.
- 
-    Returns
-    -------
-    lons : list
-           List of longitude values
-    lats : list
-           List of latitude values
-    alts : list
-           List of altitude values
-    '''
-    if radii is None:
-        semi_major, semi_minor = get_radii(camera)
-    else:
-        semi_major, semi_minor = radii
+class Footprint():
+    def __init__(self, sensor, geodata, dem=0):
+        self.sensor = sensor
+        self.dem = dem
 
-    ecef = pyproj.Proj(proj='geocent', a=semi_major, b=semi_minor)
-    lla = pyproj.Proj(proj='latlon', a=semi_major, b=semi_minor)
 
-    gnds = np.empty((len(boundary), 3))
+    def footprint_bcbf(self):
+        '''
+        Generates a latlon bounding box given a camera model
 
-    for i, b in enumerate(boundary):
-        # Could be potential errors or warnings from imageToGround
-        try:
-            gnd = camera.imageToGround(csmapi.ImageCoord(*b), 0)
-        except:
-            pass
+        Parameters
+        ----------
+        camera : object
+                csmapi generated camera model
+        boundary : list
+                of boundary image coordinates
+        radii : tuple
+                in the form (semimajor, semiminor) axes in meters. The default
+                None, will attempt to get the radii from the camera object.
+    
+        Returns
+        -------
+        : ndarray
+        of ground coordinates
+        '''
 
-        gnds[i] = [gnd.x, gnd.y, gnd.z]
+        gnds = []
 
-    lons, lats, alts = pyproj.transform(ecef, lla, gnds[:,0], gnds[:,1], gnds[:,2])
-    return lons, lats, alts
+        for i, b in enumerate(self.geodata.boundary):
+            # Could be potential errors or warnings from imageToGround
+            try:
+                gnd = self.sensor.intersect(b, self.dem)
+                gnds.append([gnd.x, gnd.y, gnd.z])
+            except: pass
 
-def generate_gcps(camera, boundary, radii=None):
-    '''
-    Generates an area of ground control points formated as:
-    <GCP Id="" Info="" Pixel="" Line="" X="" Y="" Z="" /> per record
-    Parameters
-    ----------
-    camera : object
-             csmapi generated camera model
-    boundary : list
-               of image boundary coordinates
-    nnodes : int
-             Not sure
-    semi_major : int
-                 Semimajor axis of the target body
-    semi_minor : int
-                 Semiminor axis of the target body
-    n_points : int
-               Number of points to generate between the corners of the bounding
-               box per side.
-    Returns
-    -------
-    gcps : list
-           List of all gcp records generated
-    '''
-    if radii is None:
-        semi_major, semi_minor = get_radii(camera)
-    else:
-        semi_major, semi_minor = radii
+        return np.array(gnds)
 
-    lons, lats, alts = generate_latlon_boundary(camera, boundary, radii=radii)
-
-    lla = np.vstack((lons, lats, alts)).T
-
-    tr = zip(boundary, lla)
-
-    gcps = []
-    for i, t in enumerate(tr):
-        l = '<GCP Id="{}" Info="{}" Pixel="{}" Line="{}" X="{}" Y="{}" Z="{}" />'.format(i, i, t[0][1], t[0][0], t[1][0], t[1][1], t[1][2])
-        gcps.append(l)
-
-    return gcps
-
-def generate_latlon_footprint(camera, boundary, radii=None):
+def footprint_latlon(ground_points, radii=None):
     '''
     Generates a latlon footprint from a csmapi generated camera model
     Parameters
@@ -325,72 +264,48 @@ def generate_bodyfixed_footprint(camera, boundary, radii=None):
 
     return latlon_fp
 
-def generate_vrt(raster_size, gcps, fpath,
-                 no_data_value=0,
-                 proj='+proj=longlat +a=3396190 +b=3376200 +no_defs'):
-    """
-    Create a GDAl VRT string from a list of ground control points and
-    a projection.
-
+def generate_gcps(camera, boundary, radii=None):
+    '''
+    Generates an area of ground control points formated as:
+    <GCP Id="" Info="" Pixel="" Line="" X="" Y="" Z="" /> per record
     Parameters
     ----------
-    raster_size : iterable
-                  in the form xsize, ysize
-
-    gcps : list
-           of GCPs (likely created by the generate_gcp function)
-
-    fpath : str
-            path to the source file that the VRT points to
-
-    no_data_value : numeric
-                    the no data value for the VRT (default=0)
-
-    proj : str
-           A proj4 projection string for the VRT.
-
+    camera : object
+             csmapi generated camera model
+    boundary : list
+               of image boundary coordinates
+    nnodes : int
+             Not sure
+    semi_major : int
+                 Semimajor axis of the target body
+    semi_minor : int
+                 Semiminor axis of the target body
+    n_points : int
+               Number of points to generate between the corners of the bounding
+               box per side.
     Returns
     -------
-    template : str
-               The rendered VRT string
+    gcps : list
+           List of all gcp records generated
+    '''
+    if radii is None:
+        semi_major, semi_minor = get_radii(camera)
+    else:
+        semi_major, semi_minor = radii
 
-    Example
-    --------
-    >>> camera = create_camera(label)  # Get a camera
-    >>> boundary = generate_boundary((100,100), 10)  # Compute the boundary points in image space
-    >>> gcps = generate_gcps(camera, boundary)  # Generate GCPs using the boundary in lat/lon
-    >>> vrt = generate_vrt((100,100), gcps, 'my_original_image.img')  # Create the vrt
-    >>> # Then optionally, warp the VRT to render to disk
-    >>> warp_options = gdal.WarpOptions(format='VRT', dstNodata=0)
-    >>> gdal.Warp(some_output.tif, vrt, options=warp_options)
-    """
-    xsize, ysize = raster_size
-    vrt = r'''<VRTDataset rasterXSize="{{ xsize }}" rasterYSize="{{ ysize }}">
-     <Metadata/>
-     <GCPList Projection="{{ proj }}">
-     {% for gcp in gcps -%}
-       {{gcp}}
-     {% endfor -%}
-    </GCPList>
-     <VRTRasterBand dataType="Float32" band="1">
-       <NoDataValue>{{ no_data_value }}</NoDataValue>
-       <Metadata/>
-       <ColorInterp>Gray</ColorInterp>
-       <SimpleSource>
-         <SourceFilename relativeToVRT="0">{{ fpath }}</SourceFilename>
-         <SourceBand>1</SourceBand>
-         <SourceProperties rasterXSize="{{ xsize }}" rasterYSize="{{ ysize }}"
-    DataType="Float32" BlockXSize="512" BlockYSize="512"/>
-         <SrcRect xOff="0" yOff="0" xSize="{{ xsize }}" ySize="{{ ysize }}"/>
-         <DstRect xOff="0" yOff="0" xSize="{{ xsize }}" ySize="{{ ysize }}"/>
-       </SimpleSource>
-     </VRTRasterBand>
-    </VRTDataset>'''
+    lons, lats, alts = generate_latlon_boundary(camera, boundary, radii=radii)
 
-    context = {'xsize':xsize, 'ysize':ysize,
-               'gcps':gcps,
-               'proj':proj,
-               'fpath':fpath,
-               'no_data_value':no_data_value}
-    template = jinja2.Template(vrt)
-    return template.render(context)
+    lla = np.vstack((lons, lats, alts)).T
+
+    tr = zip(boundary, lla)
+
+    gcps = []
+    for i, t in enumerate(tr):
+        l = '<GCP Id="{}" Info="{}" Pixel="{}" Line="{}" X="{}" Y="{}" Z="{}" />'.format(i, i, t[0][1], t[0][0], t[1][0], t[1][1], t[1][2])
+        gcps.append(l)
+
+    return gcps
+
+
+
+
