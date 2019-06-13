@@ -102,3 +102,10 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# Image files
+*.IMG
+*.tif
+
+# VS Code
+.vscode/*
