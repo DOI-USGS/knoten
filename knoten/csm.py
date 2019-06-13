@@ -40,7 +40,7 @@ def get_radii(camera):
     semi_minor = ellipsoid.getSemiMinorRadius()
     return semi_major, semi_minor
 
-def create_camera(label, url='http://smalls:8081/v1/pds/'):
+def create_camera(label, url='http://pfeffer.wr.usgs.gov/api/1.0/pds/'):
     """
     Given an ALE supported label, create a CSM compliant ISD file. This func
     defaults to supporting PDS labels. The URL kwarg can be used to point
@@ -95,7 +95,6 @@ def create_csm(image):
             model_name = plugin.getModelName(model_index)
             if plugin.canModelBeConstructedFromISD(isd, model_name):
                 return plugin.constructModelFromISD(isd, model_name)
-
 
 def generate_boundary(isize, npoints=10):
     '''
@@ -193,7 +192,7 @@ def generate_latlon_boundary(camera, boundary, radii=None, dem='', height=0, max
     lons, lats, alts = pyproj.transform(ecef, lla, gnds[:,0], gnds[:,1], gnds[:,2])
     return lons, lats, alts
 
-def generate_gcps(camera, boundary, semi_major=3396190, semi_minor=3376200):
+def generate_gcps(camera, boundary, radii=None):
     '''
     Generates an area of ground control points formated as:
     <GCP Id="" Info="" Pixel="" Line="" X="" Y="" Z="" /> per record
@@ -208,9 +207,12 @@ def generate_gcps(camera, boundary, semi_major=3396190, semi_minor=3376200):
     gcps : list
            List of all gcp records generated
     '''
-    lons, lats, alts = generate_latlon_boundary(camera, boundary,
-                                                semi_major=semi_major,
-                                                semi_minor=semi_minor)
+    if radii is None:
+        semi_major, semi_minor = get_radii(camera)
+    else:
+        semi_major, semi_minor = radii
+
+    lons, lats, alts = generate_latlon_boundary(camera, boundary, radii=radii)
 
     lla = np.vstack((lons, lats, alts)).T
 
@@ -295,7 +297,7 @@ def generate_latlon_footprint(camera, boundary, radii=None, dem=''):
 
     return multipoly
 
-def generate_bodyfixed_footprint(camera, boundary, semi_major=3396190, semi_minor=3376200):
+def generate_bodyfixed_footprint(camera, boundary, radii=None):
     '''
     Generates a bodyfixed footprint from a csmapi generated camera model
     Parameters
