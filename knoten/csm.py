@@ -9,6 +9,7 @@ import numpy as np
 import pyproj
 import requests
 import scipy.stats
+from singledispatch import singledispatch
 
 from plio.io.io_gdal import GeoDataset
 
@@ -96,6 +97,68 @@ def create_csm(image):
             if plugin.canModelBeConstructedFromISD(isd, model_name):
                 return plugin.constructModelFromISD(isd, model_name)
 
+@singledispatch
+def generate_ground_point(dem, image_pt, camera):
+    '''
+    Generates a longitude, latitude, and altitude coordinate for a given x, y
+    pixel coordinate
+
+    Parameters
+    ----------
+    dem : float or object
+          Either a float that represents the height above the datum or a
+          GeoDataset object generated from Plio off of a Digital Elevation
+          Model (DEM)
+    image_pt : tuple
+               Pair of x, y coordinates in pixel space
+    camera : object
+             USGSCSM camera model object
+    max_its : int, optional
+              Maximum number of iterations to go through if the height does not
+              converge
+    tolerance : float, optional
+                Number of decimal places to solve to when solving for height
+
+    Returns
+    -------
+    : object
+      CSM EcefCoord containing the newly computed lon, lat, and alt values
+      corresponding to the original image_pt coordinates
+    '''
+    if not isinstance(image_pt, csmapi.ImageCoord):
+        # Support a call where image_pt is in the form (x,y)
+        image_pt = csmapi.ImageCoord(*image_pt)
+
+    return camera.imageToGround(image_pt, dem)
+
+@generate_ground_point.register(GeoDataset)
+def _(dem, image_pt, camera, max_its = 20, tolerance = 0.001):
+    if not isinstance(image_pt, csmapi.ImageCoord):
+        # Support a call where image_pt is in the form (x,y)
+        image_pt = csmapi.ImageCoord(*image_pt)
+
+    intersection = generate_ground_point(0.0, image_pt, camera)
+    iterations = 0
+    semi_major, semi_minor = get_radii(camera)
+    ecef = pyproj.Proj(proj='geocent', a=semi_major, b=semi_minor)
+    lla = pyproj.Proj(proj='latlon', a=semi_major, b=semi_minor)
+    while iterations != max_its:
+        lon, lat, alt = pyproj.transform(ecef, lla, intersection.x, intersection.y, intersection.z)
+
+        px, py = dem.latlon_to_pixel(lon, lat)
+        height = dem.read_array(1, [px, py, 1, 1])[0][0]
+
+        next_intersection = camera.imageToGround(image_pt, float(height))
+        dist = max(abs(intersection.x - next_intersection.x),
+            abs(intersection.y - next_intersection.y),
+            abs(intersection.z - next_intersection.z))
+
+        intersection = next_intersection
+        iterations += 1
+        if dist < tolerance:
+            break
+    return intersection
+
 def generate_boundary(isize, npoints=10):
     '''
     Generates a bounding box given a camera model
@@ -118,7 +181,7 @@ def generate_boundary(isize, npoints=10):
 
     return boundary
 
-def generate_latlon_boundary(camera, boundary, radii=None, dem='', height=0, max_its=20):
+def generate_latlon_boundary(camera, boundary, dem=0.0, radii=None, **kwargs):
     '''
     Generates a latlon bounding box given a camera model
 
@@ -141,33 +204,6 @@ def generate_latlon_boundary(camera, boundary, radii=None, dem='', height=0, max
     alts : list
            List of altitude values
     '''
-    def generate_ground_point(image_pt, camera, dem, height, max_its, tolerance=0.0001):
-        # Assume some path to a dem has been provided
-        if not isinstance(image_pt, csmapi.ImageCoord):
-            # Support a call where image_pt is in the form (x,y)
-            image_pt = csmapi.ImageCoord(*image_pt)
-
-        if dem != '':
-            gd = GeoDataset(dem)
-            intersection = camera.imageToGround(image_pt, 0.0)
-            iterations = 0
-            while iterations != max_its:
-                lon, lat, alt = pyproj.transform(ecef, lla, intersection.x, intersection.y, intersection.z)
-
-                px, py = gd.latlon_to_pixel(lon, lat)
-                height = gd.read_array(1, [px, py, 1, 1])[0][0]
-
-                next_intersection = camera.imageToGround(image_pt, float(height))
-                dist = max(abs(intersection.x - next_intersection.x),
-                    abs(intersection.y - next_intersection.y),
-                    abs(intersection.z - next_intersection.z))
-
-                intersection = next_intersection
-                if dist < tolerance:
-                    break
-                iterations += 1
-            return intersection
-        return camera.imageToGround(image_pt, height)
 
     if radii is None:
         semi_major, semi_minor = get_radii(camera)
@@ -182,9 +218,8 @@ def generate_latlon_boundary(camera, boundary, radii=None, dem='', height=0, max
     for i, b in enumerate(boundary):
         # Could be potential errors or warnings from imageToGround
         try:
-            gnd = generate_ground_point(b, camera, dem=dem, height=height, max_its=max_its)
-        except Exception as e:
-            print(e)
+            gnd = generate_ground_point(dem, b, camera, **kwargs)
+        except:
             pass
 
         gnds[i] = [gnd.x, gnd.y, gnd.z]
@@ -225,7 +260,7 @@ def generate_gcps(camera, boundary, radii=None):
 
     return gcps
 
-def generate_latlon_footprint(camera, boundary, radii=None, dem=''):
+def generate_latlon_footprint(camera, boundary, dem=0.0, radii=None, **kwargs):
     '''
     Generates a latlon footprint from a csmapi generated camera model
     Parameters
@@ -242,7 +277,7 @@ def generate_latlon_footprint(camera, boundary, radii=None, dem=''):
     else:
         semi_major, semi_minor = radii
 
-    lons, lats, _ = generate_latlon_boundary(camera, boundary, radii=radii, dem=dem)
+    lons, lats, _ = generate_latlon_boundary(camera, boundary, dem=dem, radii=radii, **kwargs)
 
     # Transform coords from -180, 180 to 0, 360
     # Makes crossing the meridian easier to identify
