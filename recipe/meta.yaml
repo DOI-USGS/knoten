@@ -20,16 +20,18 @@ requirements:
   build:
   host:
     - pip
-    - python
+    - python >=3
     - setuptools
   run:
-    - python
+    - python >=3
     - csmapi
     - gdal
     - jinja2
     - numpy
+    - pyproj
     - requests
     - scipy
+    - shapely
 
 test:
   imports:
