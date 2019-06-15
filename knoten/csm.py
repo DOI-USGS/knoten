@@ -9,7 +9,7 @@ import numpy as np
 import pyproj
 import requests
 import scipy.stats
-from singledispatch import singledispatch
+from functools import singledispatch
 
 from plio.io.io_gdal import GeoDataset
 
