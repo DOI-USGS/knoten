@@ -28,6 +28,7 @@ requirements:
     - gdal
     - jinja2
     - numpy
+    - plio
     - pyproj
     - requests
     - scipy
