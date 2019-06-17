@@ -145,7 +145,7 @@ def _(dem, image_pt, camera, max_its = 20, tolerance = 0.001):
     while iterations != max_its:
         lon, lat, alt = pyproj.transform(ecef, lla, intersection.x, intersection.y, intersection.z)
 
-        px, py = dem.latlon_to_pixel(lon, lat)
+        px, py = dem.latlon_to_pixel(lat, lon)
         height = dem.read_array(1, [px, py, 1, 1])[0][0]
 
         next_intersection = camera.imageToGround(image_pt, float(height))
