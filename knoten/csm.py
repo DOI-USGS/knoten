@@ -442,3 +442,41 @@ def generate_vrt(raster_size, gcps, fpath,
                'no_data_value':no_data_value}
     template = jinja2.Template(vrt)
     return template.render(context)
+
+def triangulate_ground_pt(cameras, image_pts):
+    """
+    Given a set of cameras and image points, find the ground point closest
+    to the image rays for the image points.
+
+    This function minimizes the sum of the squared distances from the ground
+    point to the image rays.
+
+    Parameters
+    ----------
+    cameras : list
+              A list of CSM compliant sensor model objects
+    image_pts : list
+                A list of x, y image point tuples
+
+    Returns
+    -------
+     : tuple
+       The ground point as an (x, y, z) tuple
+    """
+    M = np.zeros(3,3)
+    b = np.zeros(3)
+    unit_x = np.array([1, 0, 0])
+    unit_y = np.array([0, 1, 0])
+    unit_z = np.array([0, 0, 1])
+    for camera, image_pt in zip(cameras, image_pts):
+        if not isinstance(image_pt, csmapi.ImageCoord):
+            image_pt = csmapi.ImageCoord(*image_pt)
+        locus = camera.imageToRemoteImagingLocus(image_pt)
+        look = np.array([locus.direction.x, locus.direction.y, locus.direction.z])
+        pos = np.array([locus.point.x, locus.point.y, locus.point.z])
+        look_squared = np.dot(look, look)
+        M[0] += look[0] * look - look_squared * unit_x
+        M[1] += look[1] * look - look_squared * unit_y
+        M[2] += look[2] * look - look_squared * unit_z
+        b += np.dot(pos, look) * look - look_squared * pos
+    return tuple(np.dot(np.linalg.inv(M), b))
