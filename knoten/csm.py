@@ -463,7 +463,11 @@ def triangulate_ground_pt(cameras, image_pts):
      : tuple
        The ground point as an (x, y, z) tuple
     """
-    M = np.zeros(3,3)
+    if len(cameras) != len(image_pts):
+        raise ValueError("Lengths of cameras ({}) and image_pts ({}) must be the "
+                         "same".format(len(cameras), len(image_pts)))
+
+    M = np.zeros((3,3))
     b = np.zeros(3)
     unit_x = np.array([1, 0, 0])
     unit_y = np.array([0, 1, 0])
