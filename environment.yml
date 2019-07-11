@@ -3,15 +3,28 @@ channels:
   - conda-forge
   - usgs-astrogeology
 dependencies:
-  - python >= 3
+  - python>=3
+  - cmake>=3.10
   - coveralls
   - csmapi
+  - eigen
   - gdal
+  - gsl
   - jinja2
+  - jupyter
+  - numba
   - numpy
+  - openblas>=0.3.0
+  - plio
+  - pvl
   - pytest
+  - python-dateutil
   - pyproj
   - requests
   - scipy
+  - spiceypy
   - matplotlib
+  - quaternion
   - shapely
+  - pyyaml
+  - usgscsm
