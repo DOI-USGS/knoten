@@ -9,7 +9,12 @@ from . import csm
 from csmapi import csmapi
 
 # Register the usgscam plugin with the csmapi
+libusgscsm_path = find_library('usgscsm')
 
-lib = ctypes.CDLL(find_library('usgscsm'))
-if not lib:
+if not libusgscsm_path:
+    warnings.warn('libusgscsm not installed, unable to load shared library.')
+
+libusgscsm = ctypes.CDLL(libusgscsm_path)
+
+if not libusgscsm._name:
     warnings.warn('Unable to load usgscsm shared library')
