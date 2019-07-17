@@ -9,6 +9,9 @@ import numpy as np
 import pyproj
 import requests
 import scipy.stats
+from functools import singledispatch
+
+from plio.io.io_gdal import GeoDataset
 
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -17,6 +20,26 @@ class NumpyEncoder(json.JSONEncoder):
         elif isinstance(obj, datetime.date):
             return obj.isoformat()
         return json.JSONEncoder.default(self, obj)
+
+def get_radii(camera):
+    """
+    Given a sensor model, get the ellipsoid and return
+    the semi major and semi_minor radii.
+
+    Parameters
+    ----------
+    camera : object
+             A CSM compliant sensor model object
+
+    Returns
+    -------
+     : tuple
+       in the form (semi_major, semi_minor)
+    """
+    ellipsoid = csmapi.SettableEllipsoid.getEllipsoid(camera)
+    semi_major = ellipsoid.getSemiMajorRadius()
+    semi_minor = ellipsoid.getSemiMinorRadius()
+    return semi_major, semi_minor
 
 def create_camera(label, url='http://pfeffer.wr.usgs.gov/api/1.0/pds/'):
     """
@@ -74,6 +97,67 @@ def create_csm(image):
             if plugin.canModelBeConstructedFromISD(isd, model_name):
                 return plugin.constructModelFromISD(isd, model_name)
 
+@singledispatch
+def generate_ground_point(dem, image_pt, camera):
+    '''
+    Generates a longitude, latitude, and altitude coordinate for a given x, y
+    pixel coordinate
+
+    Parameters
+    ----------
+    dem : float or object
+          Either a float that represents the height above the datum or a
+          GeoDataset object generated from Plio off of a Digital Elevation
+          Model (DEM)
+    image_pt : tuple
+               Pair of x, y coordinates in pixel space
+    camera : object
+             USGSCSM camera model object
+    max_its : int, optional
+              Maximum number of iterations to go through if the height does not
+              converge
+    tolerance : float, optional
+                Number of decimal places to solve to when solving for height
+
+    Returns
+    -------
+    : object
+      CSM EcefCoord containing the newly computed lon, lat, and alt values
+      corresponding to the original image_pt coordinates
+    '''
+    if not isinstance(image_pt, csmapi.ImageCoord):
+        # Support a call where image_pt is in the form (x,y)
+        image_pt = csmapi.ImageCoord(*image_pt)
+
+    return camera.imageToGround(image_pt, dem)
+
+@generate_ground_point.register(GeoDataset)
+def _(dem, image_pt, camera, max_its = 20, tolerance = 0.001):
+    if not isinstance(image_pt, csmapi.ImageCoord):
+        # Support a call where image_pt is in the form (x,y)
+        image_pt = csmapi.ImageCoord(*image_pt)
+
+    intersection = generate_ground_point(0.0, image_pt, camera)
+    iterations = 0
+    semi_major, semi_minor = get_radii(camera)
+    ecef = pyproj.Proj(proj='geocent', a=semi_major, b=semi_minor)
+    lla = pyproj.Proj(proj='latlon', a=semi_major, b=semi_minor)
+    while iterations != max_its:
+        lon, lat, alt = pyproj.transform(ecef, lla, intersection.x, intersection.y, intersection.z)
+
+        px, py = dem.latlon_to_pixel(lat, lon)
+        height = dem.read_array(1, [px, py, 1, 1])[0][0]
+
+        next_intersection = camera.imageToGround(image_pt, float(height))
+        dist = max(abs(intersection.x - next_intersection.x),
+            abs(intersection.y - next_intersection.y),
+            abs(intersection.z - next_intersection.z))
+
+        intersection = next_intersection
+        iterations += 1
+        if dist < tolerance:
+            break
+    return intersection
 
 def generate_boundary(isize, npoints=10):
     '''
@@ -97,7 +181,7 @@ def generate_boundary(isize, npoints=10):
 
     return boundary
 
-def generate_latlon_boundary(camera, boundary, semi_major=3396190, semi_minor=3376200):
+def generate_latlon_boundary(camera, boundary, dem=0.0, radii=None, **kwargs):
     '''
     Generates a latlon bounding box given a camera model
 
@@ -106,16 +190,11 @@ def generate_latlon_boundary(camera, boundary, semi_major=3396190, semi_minor=33
     camera : object
              csmapi generated camera model
     boundary : list
-               of boundary coordinates
-    nnodes : int
-             Not sure
-    semi_major : int
-                 Semimajor axis of the target body
-    semi_minor : int
-                 Semiminor axis of the target body
-    n_points : int
-               Number of points to generate between the corners of the bounding
-               box per side.
+               of boundary image coordinates
+    radii : tuple
+            in the form (semimajor, semiminor) axes in meters. The default
+            None, will attempt to get the radii from the camera object.
+
     Returns
     -------
     lons : list
@@ -126,6 +205,11 @@ def generate_latlon_boundary(camera, boundary, semi_major=3396190, semi_minor=33
            List of altitude values
     '''
 
+    if radii is None:
+        semi_major, semi_minor = get_radii(camera)
+    else:
+        semi_major, semi_minor = radii
+
     ecef = pyproj.Proj(proj='geocent', a=semi_major, b=semi_minor)
     lla = pyproj.Proj(proj='latlon', a=semi_major, b=semi_minor)
 
@@ -134,7 +218,7 @@ def generate_latlon_boundary(camera, boundary, semi_major=3396190, semi_minor=33
     for i, b in enumerate(boundary):
         # Could be potential errors or warnings from imageToGround
         try:
-            gnd = camera.imageToGround(csmapi.ImageCoord(*b), 0)
+            gnd = generate_ground_point(dem, b, camera, **kwargs)
         except:
             pass
 
@@ -143,7 +227,7 @@ def generate_latlon_boundary(camera, boundary, semi_major=3396190, semi_minor=33
     lons, lats, alts = pyproj.transform(ecef, lla, gnds[:,0], gnds[:,1], gnds[:,2])
     return lons, lats, alts
 
-def generate_gcps(camera, boundary, semi_major=3396190, semi_minor=3376200):
+def generate_gcps(camera, boundary, radii=None):
     '''
     Generates an area of ground control points formated as:
     <GCP Id="" Info="" Pixel="" Line="" X="" Y="" Z="" /> per record
@@ -153,23 +237,17 @@ def generate_gcps(camera, boundary, semi_major=3396190, semi_minor=3376200):
              csmapi generated camera model
     boundary : list
                of image boundary coordinates
-    nnodes : int
-             Not sure
-    semi_major : int
-                 Semimajor axis of the target body
-    semi_minor : int
-                 Semiminor axis of the target body
-    n_points : int
-               Number of points to generate between the corners of the bounding
-               box per side.
     Returns
     -------
     gcps : list
            List of all gcp records generated
     '''
-    lons, lats, alts = generate_latlon_boundary(camera, boundary,
-                                                semi_major=semi_major,
-                                                semi_minor=semi_minor)
+    if radii is None:
+        semi_major, semi_minor = get_radii(camera)
+    else:
+        semi_major, semi_minor = radii
+
+    lons, lats, alts = generate_latlon_boundary(camera, boundary, radii=radii)
 
     lla = np.vstack((lons, lats, alts)).T
 
@@ -182,30 +260,24 @@ def generate_gcps(camera, boundary, semi_major=3396190, semi_minor=3376200):
 
     return gcps
 
-def generate_latlon_footprint(camera, boundary, semi_major=3396190, semi_minor=3376200):
+def generate_latlon_footprint(camera, boundary, dem=0.0, radii=None, **kwargs):
     '''
     Generates a latlon footprint from a csmapi generated camera model
     Parameters
     ----------
     camera : object
              csmapi generated camera model
-    nnodes : int
-             Not sure
-    semi_major : int
-                 Semimajor axis of the target body
-    semi_minor : int
-                 Semiminor axis of the target body
-    n_points : int
-               Number of points to generate between the corners of the bounding
-               box per side.
     Returns
     -------
     : object
       ogr multipolygon containing between one and two polygons
     '''
-    lons, lats, _ = generate_latlon_boundary(camera, boundary,
-                                             semi_major=semi_major,
-                                             semi_minor=semi_minor)
+    if radii is None:
+        semi_major, semi_minor = get_radii(camera)
+    else:
+        semi_major, semi_minor = radii
+
+    lons, lats, _ = generate_latlon_boundary(camera, boundary, dem=dem, radii=radii, **kwargs)
 
     # Transform coords from -180, 180 to 0, 360
     # Makes crossing the meridian easier to identify
@@ -260,7 +332,7 @@ def generate_latlon_footprint(camera, boundary, semi_major=3396190, semi_minor=3
 
     return multipoly
 
-def generate_bodyfixed_footprint(camera, boundary, semi_major=3396190, semi_minor=3376200):
+def generate_bodyfixed_footprint(camera, boundary, radii=None):
     '''
     Generates a bodyfixed footprint from a csmapi generated camera model
     Parameters
@@ -277,7 +349,12 @@ def generate_bodyfixed_footprint(camera, boundary, semi_major=3396190, semi_mino
     : object
       ogr polygon
     '''
-    latlon_fp = generate_latlon_footprint(camera, boundary, semi_major = semi_major, semi_minor = semi_minor)
+    if radii is None:
+        semi_major, semi_minor = get_radii(camera)
+    else:
+        semi_major, semi_minor = radii
+
+    latlon_fp = generate_latlon_footprint(camera, boundary, radii=radii)
 
     ecef = pyproj.Proj(proj='geocent', a=semi_major, b=semi_minor)
     lla = pyproj.Proj(proj='latlon', a=semi_major, b=semi_minor)
@@ -365,3 +442,45 @@ def generate_vrt(raster_size, gcps, fpath,
                'no_data_value':no_data_value}
     template = jinja2.Template(vrt)
     return template.render(context)
+
+def triangulate_ground_pt(cameras, image_pts):
+    """
+    Given a set of cameras and image points, find the ground point closest
+    to the image rays for the image points.
+
+    This function minimizes the sum of the squared distances from the ground
+    point to the image rays.
+
+    Parameters
+    ----------
+    cameras : list
+              A list of CSM compliant sensor model objects
+    image_pts : list
+                A list of x, y image point tuples
+
+    Returns
+    -------
+     : tuple
+       The ground point as an (x, y, z) tuple
+    """
+    if len(cameras) != len(image_pts):
+        raise ValueError("Lengths of cameras ({}) and image_pts ({}) must be the "
+                         "same".format(len(cameras), len(image_pts)))
+
+    M = np.zeros((3,3))
+    b = np.zeros(3)
+    unit_x = np.array([1, 0, 0])
+    unit_y = np.array([0, 1, 0])
+    unit_z = np.array([0, 0, 1])
+    for camera, image_pt in zip(cameras, image_pts):
+        if not isinstance(image_pt, csmapi.ImageCoord):
+            image_pt = csmapi.ImageCoord(*image_pt)
+        locus = camera.imageToRemoteImagingLocus(image_pt)
+        look = np.array([locus.direction.x, locus.direction.y, locus.direction.z])
+        pos = np.array([locus.point.x, locus.point.y, locus.point.z])
+        look_squared = np.dot(look, look)
+        M[0] += look[0] * look - look_squared * unit_x
+        M[1] += look[1] * look - look_squared * unit_y
+        M[2] += look[2] * look - look_squared * unit_z
+        b += np.dot(pos, look) * look - look_squared * pos
+    return tuple(np.dot(np.linalg.inv(M), b))
