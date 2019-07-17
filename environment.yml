@@ -13,4 +13,5 @@ dependencies:
   - pyproj
   - requests
   - scipy
+  - matplotlib
   - shapely

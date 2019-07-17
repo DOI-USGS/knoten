@@ -8,7 +8,7 @@ source:
   git_url: https://github.com/USGS-Astrogeology/knoten
 
 build:
-  number : 0 
+  number: {{ GIT_DESCRIBE_NUMBER }}
   script: "{{ PYTHON }} -m pip install . --no-deps -vv"
 
 extra:
@@ -28,8 +28,11 @@ requirements:
     - gdal
     - jinja2
     - numpy
+    - plio
+    - pyproj
     - requests
     - scipy
+    - shapely
 
 test:
   imports:
