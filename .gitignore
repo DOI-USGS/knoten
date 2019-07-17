@@ -104,8 +104,14 @@ venv.bak/
 .mypy_cache/
 
 # Image files
+*.img
 *.IMG
 *.tif
 
 # VS Code
 .vscode/*
+
+# ISIS
+print.prt
+*.cub
+*.CUB
