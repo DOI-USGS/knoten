@@ -30,7 +30,7 @@ before_install:
   - conda env update -n test -f environment.yml
 
 script:
-  - pytest tests
+  - PYTHONPATH=. pytest tests
 
 after_success:
   - coveralls
