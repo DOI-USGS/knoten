@@ -112,13 +112,16 @@ def point_info(cube_path, x, y, point_type, allow_outside=False):
 
         f.write("\n".join(["{}, {}".format(xval,yval) for xval,yval in zip(x, y)]))
         f.flush()
-        try:
-            pvlres = isis.campt(from_=cube_path, coordlist=f.name, allowoutside=allow_outside, usecoordlist=True, coordtype=point_type)
-        except ProcessError as e:
-            warn(f"CAMPT call failed, image: {cube_path}\n{e.stderr}")
-            return
 
-        pvlres = pvl.loads(pvlres)
+        with tempfile.NamedTemporaryFile("r+") as campt_output:
+            try:
+                isis.campt(from_=cube_path, coordlist=f.name, allowoutside=allow_outside, usecoordlist=True, coordtype=point_type, to=campt_output.name)
+            except ProcessError as e:
+                warn(f"CAMPT call failed, image: {cube_path}\n{e.stderr}")
+                return
+
+            pvlres = pvl.load(campt_output.name)
+            
         if len(x) > 1 and len(y) > 1:
             for r in pvlres:
                 # convert all pixels to PLIO pixels from ISIS
@@ -127,7 +130,6 @@ def point_info(cube_path, x, y, point_type, allow_outside=False):
         else:
             pvlres["GroundPoint"]["Sample"] -= .5
             pvlres["GroundPoint"]["Line"] -= .5
-
     return pvlres
 
 
