@@ -173,7 +173,6 @@ def plot_diff(data, title='diff plot', colx='x', coly='y', coldx='diffx', coldy=
                             title=f'{colmag}'
                         ),
                         colorscale="viridis",
-                        reversescale=True
                 )), row=2, col=1)
 
     xavg = data.groupby(colx).apply(np.mean)
@@ -186,7 +185,6 @@ def plot_diff(data, title='diff plot', colx='x', coly='y', coldx='diffx', coldy=
         marker=dict(
                 color=xavg[colmag],
                 colorscale="viridis",
-                reversescale=True
         )), row=1, col=1)
 
     yavg = data.groupby(coly).apply(np.mean)
@@ -199,7 +197,6 @@ def plot_diff(data, title='diff plot', colx='x', coly='y', coldx='diffx', coldy=
         marker=dict(
                 color=yavg[colmag],
                 colorscale="viridis",
-                reversescale=True
         )), row=2, col=2)
 
     fig.update_layout(width=width, height=height, showlegend=True,legend_orientation="h", title_text=title)
