@@ -3,9 +3,11 @@ channels:
   - conda-forge
   - usgs-astrogeology
 dependencies:
+  - bokeh
   - coveralls
   - csmapi
   - gdal
+  - holoviews
   - jinja2
   - jupyter
   - matplotlib
