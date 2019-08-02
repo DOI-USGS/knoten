@@ -2,6 +2,7 @@ name: knoten
 channels:
   - conda-forge
   - usgs-astrogeology
+  - plotly
 dependencies:
   - plotly
   - plotly-orca 
