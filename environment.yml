@@ -2,16 +2,26 @@ name: knoten
 channels:
   - conda-forge
   - usgs-astrogeology
+  - plotly
 dependencies:
-  - python >= 3
   - coveralls
   - csmapi
   - gdal
+  - holoviews
   - jinja2
+  - jupyter
+  - matplotlib
   - numpy
-  - pytest
+  - plio
+  - plotly
+  - plotly-orca 
+  - psutil 
+  - pvl
   - pyproj
+  - pysis
+  - pytest
+  - python>=3
   - requests
   - scipy
-  - matplotlib
   - shapely
+  - usgscsm
