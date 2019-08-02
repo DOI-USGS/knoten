@@ -140,7 +140,6 @@ def plot_diff(data, title='diff plot', colx='x', coly='y', coldx='diffx', coldy=
     fig = make_subplots(rows=2, cols=2, column_widths=[0.9, .1], row_width=[.9, .1],
                         shared_xaxes=True, shared_yaxes=True, horizontal_spacing = 0.01, vertical_spacing = 0.01)
 
-    arrow_scale = (data[coly].iloc[1]-data[colx].iloc[0]+data[colx].iloc[1]-data[colx].iloc[0])/5
     quiver_plot = ff.create_quiver(data[colx],
                            data[coly],
                            data[coldx],
@@ -318,8 +317,7 @@ def reprojection_diff(isd, cube, nx=10, ny=50, width=500, height=500):
     isisgnds = np.asarray([np.asarray(g[1]['BodyFixedCoordinate'].value)*1000 for g in isis_pts])
     csm_pts = np.asarray([[p.samp, p.line] for p in [csmcam.groundToImage(csmapi.EcefCoord(*bf)) for bf in isisgnds]])
 
-    # subtract .5 for isis to csm conversion
-    isis2csm_diff = np.asarray([xs,ys]).T - csm_pts -.5
+    isis2csm_diff = np.asarray([xs,ys]).T - csm_pts
     isis2csm_diffmag = np.linalg.norm(isis2csm_diff, axis=1)
     isis2csm_angles = np.arctan2(*isis2csm_diff.T[::-1])
 
@@ -338,7 +336,7 @@ def reprojection_diff(isd, cube, nx=10, ny=50, width=500, height=500):
     isis_imgpts = point_info(cube, (csmlon+360)%360, csmlat, 'ground')
     isis_imgpts = np.asarray([(p[1]['Sample'], p[1]['Line']) for p in isis_imgpts])
 
-    csm2isis_diff = np.asarray([xs,ys]).T - (isis_imgpts-.5)
+    csm2isis_diff = np.asarray([xs,ys]).T - isis_imgpts
     csm2isis_diffmag = np.linalg.norm(csm2isis_diff, axis=1)
     csm2isis_angles = np.arctan2(*(csm2isis_diff/csm2isis_diffmag[:,np.newaxis]).T[::-1])
     csm2isis_data = np.asarray([xs, ys, isis_imgpts.T[0], isis_imgpts.T[1], csm2isis_diff.T[0], csm2isis_diff.T[1], csm2isis_diffmag, csm2isis_angles]).T
