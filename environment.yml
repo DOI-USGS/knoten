@@ -3,7 +3,9 @@ channels:
   - conda-forge
   - usgs-astrogeology
 dependencies:
-  - bokeh
+  - plotly
+  - plotly-orca 
+  - psutil 
   - coveralls
   - csmapi
   - gdal
