@@ -44,4 +44,4 @@ For full testing reports and example usage, please see the linked example Jupyte
 |      Cassini ISS      |      [link](examples/cassini_isis_cmp.ipynb)      |         No        |    sample mean=-12.3; line mean=-0.1    |     sample mean=-0.2; line mean=0.9     |
 |  Dawn Framing Camera  |      [link](examples/dawn_fc_isis_cmp.ipynb)      |     sub-pixel; in testing for production    | sample mean=-1.9e-03; line mean=1.8e-03 | sample mean=1.9e-03; line mean=-1.8e-03 |
 
-The Difference column (CSM -> ISIS) represents the mean difference in pixels from running usgscsm's *image2ground* from the CSM and then ISIS3's *campt* (ground2image). The Difference column (ISIS -> CSM) is simply the reverse starting with ISIS3 first with *campt* (image2ground) and then usgscsm's *ground2image*.
+The Difference column (CSM -> ISIS) represents the mean difference in pixels from running usgscsm's *image2ground* and then back to the camera using ISIS3's *campt* (ground2image). The Difference column (ISIS -> CSM) is simply the reverse starting with ISIS3 first with *campt* (image2ground) and then usgscsm's *ground2image*.
