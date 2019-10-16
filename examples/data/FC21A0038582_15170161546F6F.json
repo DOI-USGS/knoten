@@ -1,1 +1,90 @@
-{"radii": {"semimajor": 482.1, "semiminor": 445.94, "unit": "km"}, "sensor_position": {"positions": [[258052.46050459438, 14328.334911364209, -4862503.790282428]], "velocities": [[-104.71448804480892, -85.03343718442122, -5.785560799662908]], "unit": "m"}, "sun_position": {"positions": [[360894607.08392787, 246450736.5225146, 30565692.14307168, 47393.587698748765]], "velocities": [[47393.587698748765, -69400.21547545145, 0.19342351842482625]], "unit": "m"}, "sensor_orientation": {"quaternions": [[0.001892487503056546, 0.02136785850877805, -0.27780847719201385, -0.9603969403918642]]}, "detector_sample_summing": 1, "detector_line_summing": 1, "focal_length_model": {"focal_length": 150.08}, "detector_center": {"line": 512.0, "sample": 512.0}, "starting_detector_line": 0, "starting_detector_sample": 0, "focal2pixel_lines": [0.0, 0.0, 71.40816909454442], "focal2pixel_samples": [0.0, 71.40816909454442, 0.0], "optical_distortion": {"dawnfc": {"coefficients": [9.2e-06]}}, "image_lines": 1024, "image_samples": 1024, "name_platform": "DAWN", "name_sensor": "FRAMING CAMERA 2", "reference_height": {"maxheight": 1000, "minheight": -1000, "unit": "m"}, "name_model": "USGS_ASTRO_FRAME_SENSOR_MODEL", "center_ephemeris_time": 488002614.62294483}
+{
+  "radii": {
+    "semimajor": 482.0,
+    "semiminor": 446.0,
+    "unit": "km"
+  },
+  "sensor_position": {
+    "positions": [
+      [
+        257924.2539548336,
+        15116.928334651788,
+        -4862688.373235127
+      ]
+    ],
+    "velocities": [
+      [
+        -104.55513398803222,
+        -85.04943875018718,
+        -5.7904352269050605
+      ]
+    ],
+    "unit": "m"
+  },
+  "sun_position": {
+    "positions": [
+      [
+        360779830121.1448,
+        246614934915.23608,
+        30596642675.886036
+      ]
+    ],
+    "velocities": [
+      [
+        47425159.85750815,
+        -69378138.7113738,
+        194.4785338852277
+      ]
+    ],
+    "unit": "m"
+  },
+  "sensor_orientation": {
+    "quaternions": [
+      [
+        0.0018484365271078176,
+        0.021392681896720694,
+        -0.2780296634557242,
+        -0.9603324646612587
+      ]
+    ]
+  },
+  "detector_sample_summing": 1,
+  "detector_line_summing": 1,
+  "focal_length_model": {
+    "focal_length": 150.08
+  },
+  "detector_center": {
+    "line": 512.0,
+    "sample": 512.0
+  },
+  "starting_detector_line": 0,
+  "starting_detector_sample": 0,
+  "focal2pixel_lines": [
+    0.0,
+    0.0,
+    71.40816909454442
+  ],
+  "focal2pixel_samples": [
+    0.0,
+    71.40816909454442,
+    0.0
+  ],
+  "optical_distortion": {
+    "dawnfc": {
+      "coefficients": [
+        9.2e-06
+      ]
+    }
+  },
+  "image_lines": 1024,
+  "image_samples": 1024,
+  "name_platform": "DAWN",
+  "name_sensor": "FRAMING CAMERA 2",
+  "reference_height": {
+    "maxheight": 1000,
+    "minheight": -1000,
+    "unit": "m"
+  },
+  "name_model": "USGS_ASTRO_FRAME_SENSOR_MODEL",
+  "center_ephemeris_time": 488002614.62294483
+}
