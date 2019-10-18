@@ -294,7 +294,7 @@ def plot_diff_3d_cone(data, title='3D diff plot', colx='x', coly='y', colz='z',
 
     return fig
 
-def reprojection_diff(isd, cube, nx=10, ny=50, width=500, height=500):
+def reprojection_diff(isd, cube, nx=10, ny=50, width=500, height=500, edge_pad=0.0):
     """
     """
 
@@ -304,7 +304,7 @@ def reprojection_diff(isd, cube, nx=10, ny=50, width=500, height=500):
     nsamples = isdjson['image_samples']
 
     # generate meshgrid
-    xs, ys = np.mgrid[0:nsamples:nsamples/nx, 0:nlines:nlines/ny]
+    xs, ys = np.mgrid[edge_pad:nsamples-edge_pad:nsamples/nx, edge_pad:nlines-edge_pad:nlines/ny]
     xs, ys = xs.flatten(), ys.flatten()
 
     csmcam = csm.create_csm(isd)
