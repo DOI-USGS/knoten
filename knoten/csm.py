@@ -74,7 +74,7 @@ def create_camera(label, url='http://pfeffer.wr.usgs.gov/api/1.0/pds/'):
         model = plugin.constructModelFromISD(isd, model_name)
         return model
 
-def create_csm(image):
+def create_csm(image, verbose=False):
     """
     Given an image file create a Community Sensor Model.
 
@@ -82,6 +82,8 @@ def create_csm(image):
     ----------
     image : str
             The image filename to create a CSM for
+    verbose : bool
+              Print information about which plugins and models were attempted
 
     Returns
     -------
@@ -91,11 +93,26 @@ def create_csm(image):
     isd = csmapi.Isd(image)
     plugins = csmapi.Plugin.getList()
     for plugin in plugins:
+        if verbose:
+            print(f'Trying plugin {plugin.getPluginName()}')
         num_models = plugin.getNumModels()
         for model_index in range(num_models):
             model_name = plugin.getModelName(model_index)
-            if plugin.canModelBeConstructedFromISD(isd, model_name):
+            warnings = csmapi.WarningList()
+            if verbose:
+                print(f'Trying model {plugin.getModelName(model_index)}')
+            if plugin.canModelBeConstructedFromISD(isd, model_name, warnings):
+                camera_warnings = csmapi.WarningList()
+                camera = plugin.constructModelFromISD(isd, model_name, camera_warnings)
+                if verbose:
+                    for warning in camera_warnings:
+                        print(f'Warning in function {warning.getFunction()}: "{warning.getMessage()}"')
+                    print('Success!')
                 return plugin.constructModelFromISD(isd, model_name)
+            elif verbose:
+                for warning in warnings:
+                    print(f'Warning in function {warning.getFunction()}: "{warning.getMessage()}"')
+                print('Failed!')
 
 @singledispatch
 def generate_ground_point(dem, image_pt, camera):
