@@ -29,7 +29,7 @@ conda env create -f environment.yml
 
 <hr>
 
-**Status Report - July 2019:**
+**Status Report - November 2019:**
 
 For full testing reports and example usage, please see the linked example Jupyter notebooks in the table below. 
 
