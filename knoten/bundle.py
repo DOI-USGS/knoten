@@ -3,6 +3,7 @@ import pandas as pd
 import pvl
 import os
 import csmapi
+from collections import OrderedDict
 
 def closest_approach(points, direction):
     """
@@ -28,7 +29,7 @@ def closest_approach(points, direction):
         line = direction[i] / np.linalg.norm(direction[i])
         design_mat[3*i:3*i+3] = np.identity(3) - np.outer(line, line)
         rhs[3*i:3*i+3] = np.dot(point,line) * line + point
-    closest_point, _ = np.linalg.lstsq(design_mat, rhs)
+    closest_point = np.linalg.lstsq(design_mat, rhs, rcond=None)[0]
     return closest_point
 
 def compute_apriori_ground_points(network, sensors):
@@ -47,7 +48,7 @@ def compute_apriori_ground_points(network, sensors):
      : DataFrame
        The control network dataframe with updated ground points
     """
-    for point_id, group in df.groupby('id'):
+    for point_id, group in network.groupby('id'):
         # Free points are type 2 for V2 and V5 control networks
         if group.iloc[0]["pointType"] != 2:
             continue
@@ -59,6 +60,7 @@ def compute_apriori_ground_points(network, sensors):
             positions.append([locus.point.x, locus.point.y, locus.point.z])
             look_vecs.append([locus.direction.x, locus.direction.y, locus.direction.z])
         ground_pt = closest_approach(np.array(positions), np.array(look_vecs))
+        network.loc[network.id == point_id, ["aprioriX", "aprioriY", "aprioriZ"]] = ground_pt
         network.loc[network.id == point_id, ["adjustedX", "adjustedY", "adjustedZ"]] = ground_pt
     return network
 
@@ -72,7 +74,10 @@ class CsmParameter:
         self.name = sensor.getParameterName(index)
         self.type = sensor.getParameterType(index)
         self.units = sensor.getParameterUnits(index)
-        self.value = sensor.setParameterValue(index)
+        self.value = sensor.getParameterValue(index)
+
+    def __repr__(self):
+        return f'{self.index} {self.name.strip()} ({self.type}): {self.value} {self.units}'
 
 def get_sensor_parameters(sensor, set="adjustable"):
     """
@@ -97,7 +102,7 @@ def get_sensor_parameters(sensor, set="adjustable"):
     elif (set.upper() == "NON_ADJUSTABLE"):
         param_set = csmapi.NON_ADJUSTABLE
     else:
-        raise ValueError(f"Invalid parameter set \"{}\".")
+        raise ValueError(f"Invalid parameter set \"{set}\".")
     return [CsmParameter(sensor, index) for index in sensor.getParameterSetIndices(param_set)]
 
 def compute_sensor_partials(sensor, parameters, ground_pt):
@@ -173,16 +178,16 @@ def compute_jacobian(network, sensors, parameters):
        The Jacobian matrix
     """
     num_columns = 0
-    coefficient_columns = {}
-    for serial, params in parameters.items():
+    coefficient_columns = OrderedDict()
+    for serial in network["serialnumber"].unique():
         coefficient_columns[serial] = num_columns
-        num_columns += len(params)
+        num_columns += len(parameters[serial])
     for point_id in network["id"].unique():
         # Skip fixed points
-        if network.loc[network.id == point_id, 0]["pointType"] == 4:
+        if network.loc[network.id == point_id].iloc[0]["pointType"] == 4:
             continue
-        coefficient_columns[serial] = num_columns
-        num_columns += len(params)
+        coefficient_columns[point_id] = num_columns
+        num_columns += 3
 
     num_rows = len(network) * 2
 
@@ -191,7 +196,7 @@ def compute_jacobian(network, sensors, parameters):
         row = network.iloc[i]
         serial = row["serialnumber"]
         ground_pt = row[["adjustedX", "adjustedY", "adjustedZ"]]
-        sensor = sensor[serial]
+        sensor = sensors[serial]
         params = parameters[serial]
         image_column = coefficient_columns[serial]
         point_column = coefficient_columns[row["id"]]
