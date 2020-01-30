@@ -11,12 +11,12 @@ from knoten.csm import create_csm
 
 def generate_sensors(cubes, directory=None, clean=False):
     """
-    Generate a
+    Generate a set of USGSCSM sensor models from a list of ISIS cube files
 
     Parameters
     ----------
     cubes     : str
-              Directory/filename of a file containing cube file paths
+              Directory/filename of a file containing ISIS cube file paths
     directory : str
               Output directory to save resulting json files. Defaults to the
               same directory as cube list file
@@ -26,7 +26,7 @@ def generate_sensors(cubes, directory=None, clean=False):
     Returns
     -------
     sensors   : dictionary
-
+              Dictionary mapping ISIS serial numbers to USGSCSM sensor models
     """
     if directory is None:
         directory = os.path.dirname(cubes)
