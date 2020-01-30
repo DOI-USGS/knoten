@@ -119,7 +119,7 @@ def test_compute_jacobian(control_network, sensors):
     ground_partials = [-(i+1) * np.ones((2, 3)) for i in range(9)]
     with mock.patch('knoten.bundle.compute_sensor_partials', side_effect=sensor_partials) as sensor_par_mock, \
          mock.patch('knoten.bundle.compute_ground_partials', side_effect=ground_partials) as ground_par_mock:
-        J = bundle.compute_jacobian(control_network, sensors, parameters)
+        J, coefficient_columns = bundle.compute_jacobian(control_network, sensors, parameters)
 
     expected_J = [
     [1, 1, 0, 0, 0, 0, 0, 0, -1, -1, -1, 0, 0, 0, 0, 0, 0],
@@ -141,3 +141,17 @@ def test_compute_jacobian(control_network, sensors):
     [0, 0, 0, 0, 0, 0, 9, 9, 0, 0, 0, 0, 0, 0, -9, -9, -9],
     [0, 0, 0, 0, 0, 0, 9, 9, 0, 0, 0, 0, 0, 0, -9, -9, -9]]
     np.testing.assert_array_equal(J, expected_J)
+
+def test_compute_residuals(control_network, sensors):
+    # sensor.groundToImage.side_effect = [csmapi.ImageCoord(-0.1, 7.8), csmapi.ImageCoord(0.7, 6.6), csmapi.ImageCoord(1.5, 5.4),
+    #                                     csmapi.ImageCoord(2.3, 4.2), csmapi.ImageCoord(3.1, 4.9), csmapi.ImageCoord(5.8, 3.7),
+    #                                     csmapi.ImageCoord(6.6, 2.5), csmapi.ImageCoord(7.4, 1.3), csmapi.ImageCoord(8.2, 0.1)]
+
+    sensors['a'].groundToImage.side_effect = [csmapi.ImageCoord(-0.1, 7.8), csmapi.ImageCoord(5.8, 3.7)]
+    sensors['b'].groundToImage.side_effect = [csmapi.ImageCoord(0.7, 6.6), csmapi.ImageCoord(3.1, 4.9), csmapi.ImageCoord(6.6, 2.5)]
+    sensors['c'].groundToImage.side_effect = [csmapi.ImageCoord(1.5, 5.4), csmapi.ImageCoord(7.4, 1.3)]
+    sensors['d'].groundToImage.side_effect = [csmapi.ImageCoord(2.3, 4.2), csmapi.ImageCoord(8.2, 0.1)]
+
+    V = bundle.compute_residuals(control_network, sensors)
+    assert V.shape == (18,)
+    np.testing.assert_allclose(V, [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1])
