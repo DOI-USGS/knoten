@@ -66,6 +66,9 @@ def closest_approach(points, direction):
     -------
      : array
        The (x, y, z) point that is closest to all of the lines
+     : ndarray
+       The (x, y, z) covariance matrix that describes the uncertaintly of the
+       point
     """
     num_lines = points.shape[0]
     design_mat = np.zeros((num_lines * 3, 3))
@@ -75,8 +78,10 @@ def closest_approach(points, direction):
         line = direction[i] / np.linalg.norm(direction[i])
         design_mat[3*i:3*i+3] = np.identity(3) - np.outer(line, line)
         rhs[3*i:3*i+3] = np.dot(point,line) * line + point
-    closest_point = np.linalg.lstsq(design_mat, rhs, rcond=None)[0]
-    return closest_point
+    N_inv = np.linalg.inv(design_mat.T.dot(design_mat))
+    closest_point = N_inv.dot(design_mat.T).dot(rhs)
+
+    return closest_point, N_inv
 
 def compute_apriori_ground_points(network, sensors):
     """
@@ -105,9 +110,15 @@ def compute_apriori_ground_points(network, sensors):
             locus = sensors[row["serialnumber"]].imageToRemoteImagingLocus(measure)
             positions.append([locus.point.x, locus.point.y, locus.point.z])
             look_vecs.append([locus.direction.x, locus.direction.y, locus.direction.z])
-        ground_pt = closest_approach(np.array(positions), np.array(look_vecs))
+        ground_pt, covar_mat = closest_approach(np.array(positions), np.array(look_vecs))
+        covar_vec = [covar_mat[0,0], covar_mat[0,1], covar_mat[0,2],
+                     covar_mat[1,1], covar_mat[1,2], covar_mat[2,2]]
         network.loc[network.id == point_id, ["aprioriX", "aprioriY", "aprioriZ"]] = ground_pt
         network.loc[network.id == point_id, ["adjustedX", "adjustedY", "adjustedZ"]] = ground_pt
+        network.loc[network.id == point_id, ["adjustedX", "adjustedY", "adjustedZ"]] = ground_pt
+        # We have to do a separate loop to assign a list to a single cell
+        for measure_id, row in group.iterrows():
+            network.at[measure_id, 'aprioriCovar'] = covar_vec
     return network
 
 class CsmParameter:
