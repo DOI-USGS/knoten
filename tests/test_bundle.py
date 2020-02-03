@@ -4,6 +4,7 @@ import pytest
 import numpy as np
 import pandas as pd
 from knoten import bundle
+from collections import OrderedDict
 from csmapi import csmapi
 
 @pytest.fixture
@@ -13,6 +14,7 @@ def control_network():
         'serialnumber': ['a', 'b', 'c', 'd', 'b', 'a', 'b', 'c', 'd'],
         'line': np.arange(9),
         'sample': np.arange(9)[::-1],
+        'aprioriCovar': [[], [], [], [], [], [], [], [], []],
         'aprioriX': np.zeros(9),
         'aprioriX': np.zeros(9),
         'aprioriY': np.zeros(9),
@@ -37,43 +39,49 @@ def sensors():
 def test_closest_approach_intersect():
     points = np.array([[-1, 1, 2], [0, 2, 2], [0, 1, 3]])
     directions = np.array([[1, 0, 0], [0, 2, 0], [0, 0, -1]])
-    res = bundle.closest_approach(points, directions)
+    res, covar = bundle.closest_approach(points, directions)
 
     np.testing.assert_allclose(res, [0, 1, 2])
 
 def test_closest_approach_no_intersect():
     points = np.array([[-1, 1, 2], [0.5, 1-np.sqrt(3)/2.0, 2], [0.5, 1+np.sqrt(3)/2.0, 4]])
     directions = np.array([[0, 1, 0], [np.sqrt(3)/2.0, 0.5, 0], [0, 0, 1]])
-    res = bundle.closest_approach(points, directions)
+    res, covar = bundle.closest_approach(points, directions)
 
     np.testing.assert_allclose(res, [0, 1, 2], atol=1e-12)
 
 def test_compute_ground_points(control_network, sensors):
     expected_bob = np.array([1.0, 7.0, 0.0])
+    bob_covar = np.array([[1.0, 0.1, 0.2], [0.1, 1.5, 0.15], [0.2, 0.15, 3.0]])
     expected_sally = np.array([6.5, 1.5, 0.0])
+    sally_covar = np.array([[2.0, 1.1, 0.6], [1.1, 1.0, 0.45], [0.6, 0.45, 3.2]])
 
-    with mock.patch('knoten.bundle.closest_approach', side_effect=[expected_bob, expected_sally]) as mock_closest:
+    with mock.patch('knoten.bundle.closest_approach', side_effect=[(expected_bob, bob_covar), (expected_sally, sally_covar)]) as mock_closest:
         out_df = bundle.compute_apriori_ground_points(control_network, sensors)
         mock_closest.assert_called()
 
-    np.testing.assert_array_equal(
-        out_df[out_df.id == "bob"][["aprioriX", "aprioriY", "aprioriZ"]].values,
-        np.repeat(expected_bob[:, None], 3, axis=1).T)
-    np.testing.assert_array_equal(
-        out_df[out_df.id == "bob"][["adjustedX", "adjustedY", "adjustedZ"]].values,
-        np.repeat(expected_bob[:, None], 3, axis=1).T)
-    np.testing.assert_array_equal(
-        out_df[out_df.id == "tim"][["aprioriX", "aprioriY", "aprioriZ"]].values,
-        np.zeros((2, 3)))
-    np.testing.assert_array_equal(
-        out_df[out_df.id == "tim"][["adjustedX", "adjustedY", "adjustedZ"]].values,
-        np.zeros((2, 3)))
-    np.testing.assert_array_equal(
-        out_df[out_df.id == "sally"][["aprioriX", "aprioriY", "aprioriZ"]].values,
-        np.repeat(expected_sally[:, None], 4, axis=1).T)
-    np.testing.assert_array_equal(
-        out_df[out_df.id == "sally"][["adjustedX", "adjustedY", "adjustedZ"]].values,
-        np.repeat(expected_sally[:, None], 4, axis=1).T)
+    for _, row in out_df[out_df.id == "bob"].iterrows():
+        np.testing.assert_array_equal(row[["aprioriX", "aprioriY", "aprioriZ"]].values,
+                                      expected_bob)
+        np.testing.assert_array_equal(row[["adjustedX", "adjustedY", "adjustedZ"]].values,
+                                      expected_bob)
+        np.testing.assert_array_equal(list(row["aprioriCovar"]),
+                                      [bob_covar[0,0], bob_covar[0,1], bob_covar[0,2],
+                                       bob_covar[1,1], bob_covar[1,2], bob_covar[2,2]])
+    for _, row in out_df[out_df.id == "tim"].iterrows():
+        np.testing.assert_array_equal(row[["aprioriX", "aprioriY", "aprioriZ"]].values,
+                                      np.zeros(3))
+        np.testing.assert_array_equal(row[["adjustedX", "adjustedY", "adjustedZ"]].values,
+                                      np.zeros(3))
+        assert not list(row["aprioriCovar"])
+    for _, row in out_df[out_df.id == "sally"].iterrows():
+        np.testing.assert_array_equal(row[["aprioriX", "aprioriY", "aprioriZ"]].values,
+                                      expected_sally)
+        np.testing.assert_array_equal(row[["adjustedX", "adjustedY", "adjustedZ"]].values,
+                                      expected_sally)
+        np.testing.assert_array_equal(list(row["aprioriCovar"]),
+                                      [sally_covar[0,0], sally_covar[0,1], sally_covar[0,2],
+                                       sally_covar[1,1], sally_covar[1,2], sally_covar[2,2]])
 
 def test_get_sensor_parameter():
     mock_sensor = mock.MagicMock(spec=csmapi.RasterGM)
@@ -117,9 +125,17 @@ def test_compute_jacobian(control_network, sensors):
     parameters = {sn: [mock.MagicMock()]*2 for sn in sensors}
     sensor_partials = [(i+1) * np.ones((2, 2)) for i in range(9)]
     ground_partials = [-(i+1) * np.ones((2, 3)) for i in range(9)]
+    coefficient_columns = OrderedDict()
+    coefficient_columns['a'] = (0, 2)
+    coefficient_columns['b'] = (2, 4)
+    coefficient_columns['c'] = (4, 6)
+    coefficient_columns['d'] = (6, 8)
+    coefficient_columns['bob'] = (8, 11)
+    coefficient_columns['tim'] = (11, 14)
+    coefficient_columns['sally'] = (14, 17)
     with mock.patch('knoten.bundle.compute_sensor_partials', side_effect=sensor_partials) as sensor_par_mock, \
          mock.patch('knoten.bundle.compute_ground_partials', side_effect=ground_partials) as ground_par_mock:
-        J, coefficient_columns = bundle.compute_jacobian(control_network, sensors, parameters)
+        J = bundle.compute_jacobian(control_network, sensors, parameters, coefficient_columns)
 
     expected_J = [
     [1, 1, 0, 0, 0, 0, 0, 0, -1, -1, -1, 0, 0, 0, 0, 0, 0],
