@@ -4,7 +4,7 @@ from distutils import sysconfig
 import os
 import warnings
 
-from . import csm
+from . import csm, bundle
 
 from csmapi import csmapi
 
