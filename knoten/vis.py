@@ -294,20 +294,16 @@ def plot_diff_3d_cone(data, title='3D diff plot', colx='x', coly='y', colz='z',
 
     return fig
 
-def reprojection_diff(isd, cube, nx=10, ny=50, width=500, height=500, edge_pad=0.0):
+def reprojection_diff(isd, cube, nlines, nsamples, start_line=0, start_sample=0, nx=10, ny=50, width=500, height=500, edge_pad=0.0):
     """
     """
 
     isdjson = json.load(open(isd))
-
-    nlines = isdjson['image_lines']
-    nsamples = isdjson['image_samples']
+    csmcam = csm.create_csm(isd)
 
     # generate meshgrid
-    xs, ys = np.mgrid[edge_pad:nsamples-edge_pad:nsamples/nx, edge_pad:nlines-edge_pad:nlines/ny]
+    xs, ys = np.mgrid[start_sample+edge_pad:nsamples-edge_pad:nsamples/nx, start_line+edge_pad:nlines-edge_pad:nlines/ny]
     xs, ys = xs.flatten(), ys.flatten()
-
-    csmcam = csm.create_csm(isd)
 
     # get data for isis image to ground, csm ground to image
     isis_pts = point_info(cube, xs, ys, 'image')
@@ -324,7 +320,6 @@ def reprojection_diff(isd, cube, nx=10, ny=50, width=500, height=500, edge_pad=0
     isis2csm_plot = plot_diff(isis2csm_data, colx='isis sample', coly='isis line',
                      coldx='diff sample', coldy='diff line',
                      title="ISIS2Ground->CSM2Image", width=width, height=height)
-
 
     # get data for csm image to ground, isis ground to image
     csmgnds = np.asarray([[p.x, p.y, p.z] for p in [csmcam.imageToGround(csmapi.ImageCoord(y,x), 0) for x,y in zip(xs,ys)]])
@@ -370,12 +365,11 @@ def reprojection_diff(isd, cube, nx=10, ny=50, width=500, height=500, edge_pad=0
     return isis2csm_plot, csm2isis_plot, isiscsm_latlonplot, isiscsm_bfplot, isis2csm_data, csm2isis_data, isiscsm_latlondata, isiscsm_bfdata
 
 
-def external_orientation_diff(isd, cube, nx=4, ny=4, width=500, height=500):
+def external_orientation_diff(isd, cube, nlines, nsamples, start_line=0, start_sample=0, nx=4, ny=4, width=500, height=500):
     csmcam = csm.create_csm(isd)
     isdjson = json.load(open(isd))
-    nlines, nsamples = isdjson['image_lines'], isdjson['image_samples']
 
-    xs, ys = np.mgrid[0:nsamples:nsamples/nx, 0:nlines:nlines/ny]
+    xs, ys = np.mgrid[start_sample:nsamples:nsamples/nx, start_line:nlines:nlines/ny]
     xs, ys = xs.flatten(), ys.flatten()
 
     isis_pts = point_info(cube, xs, ys, "image")
@@ -388,6 +382,7 @@ def external_orientation_diff(isd, cube, nx=4, ny=4, width=500, height=500):
     csm_pos_bf = np.asarray([[lv.point.x, lv.point.y, lv.point.z] for lv in csm_locus])
     csm_ephem_times = np.asarray([csmcam.getImageTime(csmapi.ImageCoord(y, x)) for x,y in zip(xs,ys)])
     csm_ephem_times += isdjson['center_ephemeris_time']
+    csm_ephem_times = np.around(csm_ephem_times, 5)
 
     csmisis_diff_pos = csm_pos_bf - isis_pos_bf
     csmisis_diff_lv = csm_lv_bf - isis_lv_bf
@@ -424,6 +419,6 @@ def external_orientation_diff(isd, cube, nx=4, ny=4, width=500, height=500):
                                                                    colu='isis lv x', colv='isis lv y', colw='isis lv z',
                                                                     title='ISIS CSM Position and Look Vector Difference', width=width, height=height)
 
-    csmisis_diff_ephem_plot = go.Figure(go.Scatter(x=np.linspace(0, nlines, ny), y=csmisis_diff_ephem, line_shape='spline')).update_layout(title='ISIS CSM Ephem Time Difference', width=width, height=height/2).update_xaxes(title_text='Line').update_yaxes(title_text='Time Delta Seconds')
+    csmisis_diff_ephem_plot = go.Figure(go.Scatter(x=np.linspace(start_line, nlines, ny), y=csmisis_diff_ephem, line_shape='spline')).update_layout(title='ISIS CSM Ephem Time Difference', width=width, height=height/2).update_xaxes(title_text='Line').update_yaxes(title_text='Time Delta Seconds')
 
     return csmisis_diff_lv_plot, csmisis_diff_ephem_plot, csmisis_diff_lv_data
