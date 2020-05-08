@@ -6,7 +6,7 @@ import csmapi
 import itertools
 from math import floor
 
-from pysis import isis
+from plio.io.isis_serial_number import generate_serial_number
 from ale.drivers import loads
 from collections import OrderedDict
 from knoten.csm import create_csm
@@ -42,7 +42,7 @@ def generate_sensors(cubes, directory=None, clean=False):
         with open(isd, 'w+') as f:
             f.write(loads(line.strip(), formatter='usgscsm'))
 
-        sn = isis.getsn(from_=line.strip()).strip().decode('utf-8')
+        sn = generate_serial_number(line.strip())
         sensors[sn] = create_csm(isd)
 
     if clean:
