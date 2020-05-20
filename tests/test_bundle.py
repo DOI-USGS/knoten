@@ -171,3 +171,31 @@ def test_compute_residuals(control_network, sensors):
     V = bundle.compute_residuals(control_network, sensors)
     assert V.shape == (18,)
     np.testing.assert_allclose(V, [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1])
+
+def test_compute_sigma0():
+    V = np.arange(0, 16) + 1
+    W_obs = np.diag(np.arange(16, 0, -1))
+    W_params = np.array(
+        [[1,  2,  3,  0,  0,  0],
+         [4,  5,  6,  0,  0,  0],
+         [7,  8,  9,  0,  0,  0],
+         [0,  0,  0, -1, -2, -3],
+         [0,  0,  0, -4, -5, -6],
+         [0,  0,  0, -7, -8, -9]]
+     )
+    dX = np.arange(-6, 0)
+    assert bundle.compute_sigma(V, dX, W_params, W_obs) == np.sqrt(7809 / 10)
+
+def test_compute_sigma0_sparse():
+    V = np.arange(0, 16) + 1
+    W_obs = np.diag(np.arange(16, 0, -1))
+    W_sensors  = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    W_points = {
+        "point_1" : np.array([[-1, -2, -3], [-4, -5, -6], [-7, -8, -9]])
+    }
+    dX = np.arange(-6, 0)
+    column_dict = {
+        "image_1" : (0, 3),
+        "point_1" : (3, 6)
+    }
+    assert bundle.compute_sigma_sparse(V, dX, W_sensors, W_points, W_obs, column_dict) == np.sqrt(7809 / 10)

@@ -452,13 +452,13 @@ def compute_sigma(V, dX, W_parameters, W_observations):
 
     Parameters
     ----------
-    V : np.array
-          An array of residuals of the difference between registered measure
-          and back projected ground points in image space.
+    V : ndarray
+        An array of residuals of the difference between registered measure
+        and back projected ground points in image space.
     dX : ndarray
          The array of parameter updates
     W_parameters: ndarray
-                     The parameter weight matrix (i.e.: sensor parameters and point weights)
+                  The parameter weight matrix (i.e.: sensor parameters and point weights)
     W_observations : ndarray
                      The observation weight matrix (i.e.: measure weights)
 
