@@ -435,7 +435,7 @@ def update_parameters(sensors, parameters, network, updates, coefficient_columns
     for sn, sensor in sensors.items():
         for i, param in enumerate(parameters[sn]):
             if i > coefficient_columns[sn][1]:
-                print('THIS SHOULD BE AN ACTUAL ERROR')
+                raise IndexError(f'parameter [{param.name}] at index [{i}] is beyond the max index [{coefficient_columns[sn][1]}].')
             current_value = sensor.getParameterValue(param.index)
             sensor.setParameterValue(param.index, current_value+updates[coefficient_columns[sn][0]+i])
 
@@ -446,7 +446,7 @@ def update_parameters(sensors, parameters, network, updates, coefficient_columns
         adj = updates[coefficient_columns[point_id][0]:coefficient_columns[point_id][1]]
         network.loc[network.id == point_id, ["adjustedX", "adjustedY", "adjustedZ"]] = ground_pt + adj
 
-def compute_sigma(V, dX, W_parameters, W_observations):
+def compute_sigma0(V, dX, W_parameters, W_observations):
     """
     Computes the resulting standard deviation of the residuals for the current state of the bundle network.
 
@@ -475,7 +475,7 @@ def compute_sigma(V, dX, W_parameters, W_observations):
     sigma0 = np.sqrt(VTPV/dof)
     return sigma0
 
-def compute_sigma_sparse(V, dX, W_sensors, W_points, W_observations, column_dict):
+def compute_sigma0_sparse(V, dX, W_sensors, W_points, W_observations, column_dict):
     """
     Computes the resulting standard deviation of the residuals for the current state of the bundle network.
 

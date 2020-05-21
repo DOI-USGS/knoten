@@ -184,7 +184,7 @@ def test_compute_sigma0():
          [0,  0,  0, -7, -8, -9]]
      )
     dX = np.arange(-6, 0)
-    assert bundle.compute_sigma(V, dX, W_params, W_obs) == np.sqrt(7809 / 10)
+    assert bundle.compute_sigma0(V, dX, W_params, W_obs) == np.sqrt(7809 / 10)
 
 def test_compute_sigma0_sparse():
     V = np.arange(0, 16) + 1
@@ -198,7 +198,7 @@ def test_compute_sigma0_sparse():
         "image_1" : (0, 3),
         "point_1" : (3, 6)
     }
-    assert bundle.compute_sigma_sparse(V, dX, W_sensors, W_points, W_obs, column_dict) == np.sqrt(7809 / 10)
+    assert bundle.compute_sigma0_sparse(V, dX, W_sensors, W_points, W_obs, column_dict) == np.sqrt(7809 / 10)
 
 
 def test_compute_image_weight():
