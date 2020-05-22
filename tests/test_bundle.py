@@ -171,3 +171,103 @@ def test_compute_residuals(control_network, sensors):
     V = bundle.compute_residuals(control_network, sensors)
     assert V.shape == (18,)
     np.testing.assert_allclose(V, [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, -0.9, -0.8, -0.7, -0.6, -0.5, -0.4, -0.3, -0.2, -0.1])
+
+def test_compute_sigma0():
+    V = np.arange(0, 16) + 1
+    W_obs = np.diag(np.arange(16, 0, -1))
+    W_params = np.array(
+        [[1,  2,  3,  0,  0,  0],
+         [4,  5,  6,  0,  0,  0],
+         [7,  8,  9,  0,  0,  0],
+         [0,  0,  0, -1, -2, -3],
+         [0,  0,  0, -4, -5, -6],
+         [0,  0,  0, -7, -8, -9]]
+     )
+    dX = np.arange(-6, 0)
+    assert bundle.compute_sigma0(V, dX, W_params, W_obs) == np.sqrt(7809 / 10)
+
+def test_compute_sigma0_sparse():
+    V = np.arange(0, 16) + 1
+    W_obs = np.diag(np.arange(16, 0, -1))
+    W_sensors  = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    W_points = {
+        "point_1" : np.array([[-1, -2, -3], [-4, -5, -6], [-7, -8, -9]])
+    }
+    dX = np.arange(-6, 0)
+    column_dict = {
+        "image_1" : (0, 3),
+        "point_1" : (3, 6)
+    }
+    assert bundle.compute_sigma0_sparse(V, dX, W_sensors, W_points, W_obs, column_dict) == np.sqrt(7809 / 10)
+
+
+def test_compute_image_weight():
+    def mock_covar(index_1, index_2):
+        if index_1 != index_2:
+            return 0
+        return index_1 + 1
+
+    sensor = mock.MagicMock(spec=csmapi.RasterGM)
+    sensor.getParameterCovariance = mock_covar
+    params = [mock.MagicMock(), mock.MagicMock(), mock.MagicMock()]
+    params[0].index = 0
+    params[1].index = 1
+    params[2].index = 3
+
+    np.testing.assert_allclose(
+        bundle.compute_image_weight(sensor, params),
+        [[1, 0,   0],
+         [0, 1/2, 0],
+         [0, 0,   1/4]])
+
+def test_compute_point_weight(control_network):
+    control_network.at[(control_network['id'] == 'bob').idxmax(), 'aprioriCovar'] = np.array([1, 0, 0, 2, 0, 3])
+    np.testing.assert_allclose(
+        bundle.compute_point_weight(control_network, 'bob'),
+        [[1, 0,   0],
+         [0, 1/2, 0],
+         [0, 0,   1/3]])
+
+def test_update_parameters(control_network, sensors):
+    def mock_getParameterValue(index):
+        return index + 1
+
+    params = {}
+    coefficient_columns = {}
+    current_column = 0
+
+    for sn, sensor in sensors.items():
+        sensor.getParameterValue = mock_getParameterValue
+        sensor_params = []
+        for param_idx in range(6):
+            param_mock = mock.MagicMock()
+            param_mock.index = param_idx
+            sensor_params.append(param_mock)
+        params[sn] = sensor_params
+        coefficient_columns[sn] = (current_column, current_column+6)
+        current_column += 6
+
+    for point_id in control_network['id'].unique():
+        coefficient_columns[point_id] = (current_column, current_column+3)
+        current_column += 3
+
+    updates = np.arange(0, current_column)
+
+    bundle.update_parameters(sensors, params, control_network, updates, coefficient_columns)
+
+    for sn, sensor in sensors.items():
+        coeff_start = coefficient_columns[sn][0]
+        for param_idx in range(6):
+            sensor.setParameterValue.assert_any_call(
+                param_idx,
+                param_idx + 1 + coeff_start + param_idx
+            )
+
+    for point_id, group in control_network.groupby('id'):
+        coeff_start = coefficient_columns[point_id][0]
+        coeff_end = coefficient_columns[point_id][1]
+        num_measures = len(group)
+        np.testing.assert_allclose(
+            group[['adjustedX', 'adjustedY', 'adjustedZ']].values,
+            np.tile(updates[coeff_start:coeff_end], num_measures).reshape((num_measures,3))
+        )
