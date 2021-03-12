@@ -13,6 +13,6 @@ sphinx:
 formats:
    - pdf
 
-#conda:
-#  environment: docs/environment.yml
+conda:
+  environment: docs/environment.yml
 
