@@ -4,7 +4,7 @@ import os
 
 from csmapi import csmapi
 import jinja2
-from gdal import ogr
+from osgeo import ogr
 import numpy as np
 import pyproj
 import requests
