@@ -7,7 +7,7 @@ dependencies:
   - ale>=0.3.2
   - coveralls
   - csmapi>=1.0
-  - gdal
+  - gdal>=3.0.0
   - holoviews
   - jinja2
   - jupyter
