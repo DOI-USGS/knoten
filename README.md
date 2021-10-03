@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/Knoten_Logo.svg" alt="Knoten" width=200> 
+</p>
+
 # Knoten
 
 A library to leverage python wrapped Community Sensor Models (CSMs) for common spatial/sensor operations and testing.
