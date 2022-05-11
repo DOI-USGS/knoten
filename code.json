@@ -16,9 +16,9 @@
       ]
     },
 
-    "homepageURL": "https://github.com/USGS-Astrogeology/knoten/releases/tag/0.1.0",
-    "downloadURL": "https://github.com/USGS-Astrogeology/knoten/archive/refs/tags/0.1.0.zip",
-    "disclaimerURL": "https://github.com/USGS-Astrogeology/knoten/blob/master/LICENSE.md",
+    "homepageURL": "https://github.com/USGS-Astrogeology/knoten/releases/tag/0.2.1",
+    "downloadURL": "https://github.com/USGS-Astrogeology/knoten/archive/refs/tags/0.2.1.zip",
+    "disclaimerURL": "https://github.com/USGS-Astrogeology/knoten/blob/master/DISCLAIMER.md",
     "repositoryURL": "https://github.com/USGS-Astrogeology/knoten/",
     "vcs": "git",
 
@@ -32,7 +32,7 @@
     ],
 
     "languages": [
-      "C++"
+      "Python"
     ],
 
     "contact": {
