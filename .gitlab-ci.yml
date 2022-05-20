@@ -1,4 +1,4 @@
-image: ubuntu:18.04
+image: code.usgs.gov:5001/astrogeology/knoten/ubuntu:latest
 
 clone_github:
     stage: deploy
