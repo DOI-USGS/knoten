@@ -24,7 +24,7 @@ class NumpyEncoder(json.JSONEncoder):
 def get_radii(camera):
     """
     Given a sensor model, get the ellipsoid and return
-    the semi major and semi_minor radii.
+    the semi_major and semi_minor radii.
 
     Parameters
     ----------
@@ -76,7 +76,7 @@ def create_camera(label, url='http://pfeffer.wr.usgs.gov/api/1.0/pds/'):
 
 def create_csm(image, verbose=False):
     """
-    Given an image file create a Community Sensor Model.
+    Given an image file, create a Community Sensor Model.
 
     Parameters
     ----------
@@ -184,8 +184,8 @@ def generate_boundary(isize, npoints=10):
     isize : list
             image size in the form xsize, ysize
     npoints : int
-               Number of points to generate between the corners of the bounding
-               box per side.
+              Number of points to generate between the corners of the bounding
+              box per side.
     Returns
     -------
     boundary : list
@@ -207,7 +207,11 @@ def generate_latlon_boundary(camera, boundary, dem=0.0, radii=None, **kwargs):
     camera : object
              csmapi generated camera model
     boundary : list
-               of boundary image coordinates
+               List of boundary image coordinates
+    dem : float or object
+          Either a float that represents the height above the datum or a
+          GeoDataset object generated from Plio off of a Digital Elevation
+          Model (DEM)
     radii : tuple
             in the form (semimajor, semiminor) axes in meters. The default
             None, will attempt to get the radii from the camera object.
@@ -253,7 +257,11 @@ def generate_gcps(camera, boundary, radii=None):
     camera : object
              csmapi generated camera model
     boundary : list
-               of image boundary coordinates
+               List of image boundary coordinates
+    radii : tuple
+            in the form (semimajor, semiminor) axes in meters. The default
+            None, will attempt to get the radii from the camera object.
+
     Returns
     -------
     gcps : list
@@ -284,6 +292,16 @@ def generate_latlon_footprint(camera, boundary, dem=0.0, radii=None, **kwargs):
     ----------
     camera : object
              csmapi generated camera model
+    boundary : list
+               List of boundary image coordinates
+    dem : float or object
+          Either a float that represents the height above the datum or a
+          GeoDataset object generated from Plio off of a Digital Elevation
+          Model (DEM)
+    radii : tuple
+            in the form (semimajor, semiminor) axes in meters. The default
+            None, will attempt to get the radii from the camera object.
+
     Returns
     -------
     : object
@@ -356,11 +374,12 @@ def generate_bodyfixed_footprint(camera, boundary, radii=None):
     ----------
     camera : object
              csmapi generated camera model
-    nnodes : int
-             Not sure
-    n_points : int
-               Number of points to generate between the corners of the bounding
-               box per side.
+    boundary : list
+               List of boundary image coordinates
+    radii : tuple
+            in the form (semimajor, semiminor) axes in meters. The default
+            None, will attempt to get the radii from the camera object.
+
     Returns
     -------
     : object
