@@ -67,7 +67,7 @@ def closest_approach(points, direction):
      : array
        The (x, y, z) point that is closest to all of the lines
      : ndarray
-       The (x, y, z) covariance matrix that describes the uncertaintly of the
+       The (x, y, z) covariance matrix that describes the uncertainty of the
        point
     """
     num_lines = points.shape[0]
@@ -378,7 +378,7 @@ def compute_point_weight(cnet, point_id):
 def compute_residuals(network, sensors):
     """
     Compute the error in the observations by taking the difference between the
-    ground points groundToImage projections and measure values.
+    ground points' groundToImage projections and measure values.
 
     Parameters
     ----------
