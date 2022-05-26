@@ -4,7 +4,7 @@
     "organization": "U.S. Geological Survey",
     "description": "GitHub code repository for the knoten package",
     "version": "0.2.1",
-    "status": "Pending",
+    "status": "Released",
 
     "permissions": {
       "usageType": "openSource",
