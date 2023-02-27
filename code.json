@@ -3,8 +3,8 @@
     "name": "knoten",
     "organization": "U.S. Geological Survey",
     "description": "GitHub code repository for the knoten package",
-    "version": "0.2.1",
-    "status": "Released",
+    "version": "main",
+    "status": "Development",
 
     "permissions": {
       "usageType": "openSource",
