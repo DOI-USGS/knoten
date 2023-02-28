@@ -19,7 +19,7 @@
     "homepageURL": "https://code.usgs.gov/astrogeology/knoten/",
     "downloadURL": "https://code.usgs.gov/astrogeology/knoten/-/archive/main/knoten-main.zip",
     "disclaimerURL": "https://code.usgs.gov/astrogeology/knoten/-/raw/main/DISCLAIMER.md",
-    "repositoryURL": "https://code.usgs.gov/astrogeology/plio.git",
+    "repositoryURL": "https://code.usgs.gov/astrogeology/knoten.git",
     "vcs": "git",
 
     "laborHours": 300,
