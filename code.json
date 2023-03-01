@@ -43,5 +43,50 @@
     "date": {
       "metadataLastUpdated": "2023-01-25"
     }
+  },
+  {
+    "name": "knoten",
+    "organization": "U.S. Geological Survey",
+    "description": "GitHub code repository for the knoten package",
+    "version": "0.2.1",
+    "status": "Production",
+
+    "permissions": {
+      "usageType": "openSource",
+      "licenses": [
+        {
+          "name": "Public Domain, CC0-1.0",
+          "URL": "https://code.usgs.gov/astrogeology/knoten/-/raw/0.2.1/LICENSE.md"
+        }
+      ]
+    },
+
+    "homepageURL": "https://code.usgs.gov/astrogeology/knoten/-/tree/0.2.1",
+    "downloadURL": "https://code.usgs.gov/astrogeology/knoten/-/archive/0.2.1/knoten-0.2.1.zip",
+    "disclaimerURL": "https://code.usgs.gov/astrogeology/knoten/-/raw/0.2.1/DISCLAIMER.md",
+    "repositoryURL": "https://code.usgs.gov/astrogeology/knoten.git",
+    "vcs": "git",
+
+    "laborHours": 300,
+
+    "tags": [
+      "Planetary",
+      "Remote Sensing",
+      "Photogrammetry",
+      "Testing"
+    ],
+
+    "languages": [
+      "Python"
+    ],
+
+    "contact": {
+      "name": "Adam Paquette",
+      "email": "acpaquette@usgs.gov"
+    },
+
+    "date": {
+      "metadataLastUpdated": "2023-02-27"
+    }
   }
 ]
