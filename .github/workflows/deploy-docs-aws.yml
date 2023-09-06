@@ -1,0 +1,12 @@
+name: Deploy Docs to AWS
+
+on:
+  push:
+    branches:
+      - docs
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "This job runs upon a push to the docs branch."
