@@ -1,8 +1,8 @@
-name: Deploy Docs to AWS
+name: deploy-docs-to-aws
 
 on:
   workflow_run:
-    workflows: ["Build Docs"]
+    workflows: ["build-docs"]
     branches: [docs]
     types: 
       - completed
