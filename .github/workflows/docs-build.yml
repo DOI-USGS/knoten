@@ -28,4 +28,4 @@ jobs:
       - name: Build Docs
         run: |
           cd docs
-          sphinx-build -b html source public
+          sphinx-build -b html . public
