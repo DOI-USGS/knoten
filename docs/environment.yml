@@ -1,8 +1,15 @@
+name: knoten-docs
+
 channels:
   - conda-forge
+  - default
+
 dependencies:
   - python>=3
-
+  - pip
+  - sphinx
+  - pip:
+    sphinx-material
 
 
 
