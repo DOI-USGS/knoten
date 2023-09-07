@@ -9,7 +9,7 @@ dependencies:
   - pip
   - sphinx
   - pip:
-    sphinx-material
+    - sphinx-material
 
 
 
