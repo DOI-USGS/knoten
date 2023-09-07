@@ -24,23 +24,39 @@ Please see the **status report** below for the current instruments we have imple
 
 ## Installing
 
-You can install the latest build via conda
+You can install the latest build via conda. 
 
 ```
 conda install -c usgs-astrogeology -c conda-forge knoten
 ```
 
-You can also do a local install using the following steps within a clone of the repository
+You can also do a local install using the following steps within a clone of the repository.
 
-1. Install the dependencies
-```
-conda env create -f environment.yml
-```
+1. Install the dependencies.  
+   Note: creating the environment may take around and hour.  If conda is too slow, try using mamba instead.
+    ```
+    conda env create -f environment.yml
+    ```
 
-2. Install the package
-```
-python setup.py install
-```
+1. Install the package
+    ```
+    python setup.py install
+    ```
+
+<hr>
+
+## Building Docs
+
+To build the docs:
+1. Open the docs directory: `cd docs`
+1. Create (if not existing) and activate the environment (or use the main knoten environment if it is already created).
+   
+   ```sh
+   conda env create -f environment.yml #If it does not exist already
+   conda activate knoten-docs
+   ```
+1. Run `sphinx-build -b html . public` to build the docs in the `docs/public` directory (or change "public" to a subdirectory name of your choosing).
+1. Browse to the `index.html` file in `docs/public` to open the docs.  If needed, run a utility like `http-server` in the `docs/public` directory to serve the docs on localhost.
 
 <hr>
 
