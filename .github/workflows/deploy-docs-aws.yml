@@ -1,14 +1,15 @@
-name: deploy-docs-to-aws
+name: deploy-docs-aws
 
 on:
   workflow_run:
     workflows: ["build-docs"]
-    branches: [docs]
+    branches:
+      - docs
     types: 
       - completed
 
 jobs:
-  deploy-test:
+  deploy-docs-aws-job-test:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     defaults:

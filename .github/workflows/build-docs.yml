@@ -6,7 +6,7 @@ on:
       - docs
 
 jobs:
-  Build-Docs:
+  build-docs-job:
     runs-on: ubuntu-latest
     defaults:
       run:
