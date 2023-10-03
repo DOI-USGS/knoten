@@ -252,7 +252,7 @@ def generate_latlon_boundary(camera, boundary, dem=0.0, radii=None, **kwargs):
 
         gnds[i] = [gnd.x, gnd.y, gnd.z]
 
-    lons, lats, alts = transformer.transform(ecef, lla, gnds[:,0], gnds[:,1], gnds[:,2])
+    lons, lats, alts = transformer.transform(gnds[:,0], gnds[:,1], gnds[:,2])
     return lons, lats, alts
 
 def generate_gcps(camera, boundary, radii=None):
@@ -408,7 +408,7 @@ def generate_bodyfixed_footprint(camera, boundary, radii=None):
 
         # Check if the geometry object is populated with points
         if len(latlon_coords) > 0:
-            x, y, z = transformer.transform(lla, ecef,  latlon_coords[:,0], latlon_coords[:,1], latlon_coords[:,2])
+            x, y, z = transformer.transform(latlon_coords[:,0], latlon_coords[:,1], latlon_coords[:,2])
 
             # Step over all coordinate points in a geometry object and update said point
             for j, _ in enumerate(latlon_coords):
