@@ -4,7 +4,8 @@ import pytest
 from knoten import utils
 
 def test_reproject():
-    with mock.patch('pyproj.transform', return_value=[1,1,1]) as mock_pyproj:
-        res = utils.reproject([1,1,1], 10, 10, 'geocent', 'latlon')
-        mock_pyproj.assert_called_once()
-        assert res == (1,1,1)
+    res = utils.reproject([0,1,0], 10, 10, 'geocent', 'latlon')
+    print(res)
+    assert res[0] == 0
+    assert res[1] == 90
+    assert res[2] == -9

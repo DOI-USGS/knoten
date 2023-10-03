@@ -6,13 +6,13 @@ from csmapi import csmapi
 import jinja2
 from osgeo import ogr
 import numpy as np
-import pyproj
 import requests
 import scipy.stats
 from functools import singledispatch
 
 from plio.io.io_gdal import GeoDataset
 
+from knoten import utils
 class NumpyEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, np.ndarray):
@@ -157,10 +157,16 @@ def _(dem, image_pt, camera, max_its = 20, tolerance = 0.001):
     intersection = generate_ground_point(0.0, image_pt, camera)
     iterations = 0
     semi_major, semi_minor = get_radii(camera)
-    ecef = pyproj.Proj(proj='geocent', a=semi_major, b=semi_minor)
-    lla = pyproj.Proj(proj='latlon', a=semi_major, b=semi_minor)
+    
+    source_proj = f'+proj=cart +a={semi_major} +b={semi_minor}'
+    dest_proj = f'+proj=lonlat +a={semi_major} +b={semi_minor}'
+    transformer = utils.create_transformer(source_proj, dest_proj)
+
     while iterations != max_its:
-        lon, lat, alt = pyproj.transform(ecef, lla, intersection.x, intersection.y, intersection.z)
+        lon, lat, alt = transformer.transform(intersection.x, 
+                                              intersection.y, 
+                                              intersection.z,
+                                              errcheck=True)
 
         px, py = dem.latlon_to_pixel(lat, lon)
         height = dem.read_array(1, [px, py, 1, 1])[0][0]
@@ -231,8 +237,9 @@ def generate_latlon_boundary(camera, boundary, dem=0.0, radii=None, **kwargs):
     else:
         semi_major, semi_minor = radii
 
-    ecef = pyproj.Proj(proj='geocent', a=semi_major, b=semi_minor)
-    lla = pyproj.Proj(proj='latlon', a=semi_major, b=semi_minor)
+    source_proj = f'+proj=cart +a={semi_major} +b={semi_minor}'
+    dest_proj = f'+proj=lonlat +a={semi_major} +b={semi_minor}'
+    transformer = utils.create_transformer(source_proj, dest_proj)
 
     gnds = np.empty((len(boundary), 3))
 
@@ -245,7 +252,7 @@ def generate_latlon_boundary(camera, boundary, dem=0.0, radii=None, **kwargs):
 
         gnds[i] = [gnd.x, gnd.y, gnd.z]
 
-    lons, lats, alts = pyproj.transform(ecef, lla, gnds[:,0], gnds[:,1], gnds[:,2])
+    lons, lats, alts = transformer.transform(ecef, lla, gnds[:,0], gnds[:,1], gnds[:,2])
     return lons, lats, alts
 
 def generate_gcps(camera, boundary, radii=None):
@@ -392,16 +399,16 @@ def generate_bodyfixed_footprint(camera, boundary, radii=None):
 
     latlon_fp = generate_latlon_footprint(camera, boundary, radii=radii)
 
-    ecef = pyproj.Proj(proj='geocent', a=semi_major, b=semi_minor)
-    lla = pyproj.Proj(proj='latlon', a=semi_major, b=semi_minor)
-
+    source_proj = f'+proj=lonlat +a={semi_major} +b={semi_minor}'
+    dest_proj = f'+proj=cart +a={semi_major} +b={semi_minor}'
+    transformer = utils.create_transformer(source_proj, dest_proj)
     # Step over all geometry objects in the latlon footprint
     for i in range(latlon_fp.GetGeometryCount()):
         latlon_coords = np.array(latlon_fp.GetGeometryRef(i).GetGeometryRef(0).GetPoints())
 
         # Check if the geometry object is populated with points
         if len(latlon_coords) > 0:
-            x, y, z = pyproj.transform(lla, ecef,  latlon_coords[:,0], latlon_coords[:,1], latlon_coords[:,2])
+            x, y, z = transformer.transform(lla, ecef,  latlon_coords[:,0], latlon_coords[:,1], latlon_coords[:,2])
 
             # Step over all coordinate points in a geometry object and update said point
             for j, _ in enumerate(latlon_coords):
