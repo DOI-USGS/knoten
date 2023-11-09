@@ -11,7 +11,7 @@ from ale.drivers import loads
 from collections import OrderedDict
 from knoten.csm import create_csm
 
-def generate_sensors(cubes, directory=None, clean=False):
+def generate_sensors(cubes, directory=None, clean=False, **kwargs):
     """
     Generate a set of USGSCSM sensor models from a list of ISIS cube files
 
@@ -40,7 +40,7 @@ def generate_sensors(cubes, directory=None, clean=False):
         isd = os.path.join(directory, basename+'.json')
         isd_files.append(isd)
         with open(isd, 'w+') as f:
-            f.write(loads(line.strip(), only_isis_spice=True))
+            f.write(loads(line.strip(), **kwargs))
 
         sn = generate_serial_number(line.strip())
         sensors[sn] = create_csm(isd)
