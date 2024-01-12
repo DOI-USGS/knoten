@@ -11,7 +11,7 @@ from ale.drivers import loads
 from collections import OrderedDict
 from knoten.csm import create_csm
 
-def generate_sensors(cubes, directory=None, clean=False):
+def generate_sensors(cubes, directory=None, clean=False, **kwargs):
     """
     Generate a set of USGSCSM sensor models from a list of ISIS cube files
 
@@ -40,7 +40,7 @@ def generate_sensors(cubes, directory=None, clean=False):
         isd = os.path.join(directory, basename+'.json')
         isd_files.append(isd)
         with open(isd, 'w+') as f:
-            f.write(loads(line.strip(), formatter='usgscsm'))
+            f.write(loads(line.strip(), **kwargs))
 
         sn = generate_serial_number(line.strip())
         sensors[sn] = create_csm(isd)
@@ -184,7 +184,7 @@ def compute_sensor_partials(sensor, parameters, ground_pt):
        derivatives are in the same order as the parameter list passed in.
     """
     partials = np.zeros((2, len(parameters)))
-    csm_ground = csmapi.EcefCoord(ground_pt[0], ground_pt[1], ground_pt[2])
+    csm_ground = csmapi.EcefCoord(ground_pt.iloc[0], ground_pt.iloc[1], ground_pt.iloc[2])
     for i in range(len(parameters)):
         partials[:, i] = sensor.computeSensorPartials(parameters[i].index, csm_ground)
     return partials
@@ -208,7 +208,7 @@ def compute_ground_partials(sensor, ground_pt):
        partials and the second array is the sample partials. The partial
        derivatives are in (x, y, z) order.
     """
-    csm_ground = csmapi.EcefCoord(ground_pt[0], ground_pt[1], ground_pt[2])
+    csm_ground = csmapi.EcefCoord(ground_pt.iloc[0], ground_pt.iloc[1], ground_pt.iloc[2])
     partials = np.array(sensor.computeGroundPartials(csm_ground))
     return np.reshape(partials, (2, 3))
 
@@ -399,7 +399,7 @@ def compute_residuals(network, sensors):
         row = network.iloc[i]
         serial = row["serialnumber"]
         ground_pt = row[["adjustedX", "adjustedY", "adjustedZ"]].values
-        ground_pt = csmapi.EcefCoord(ground_pt[0], ground_pt[1], ground_pt[2])
+        ground_pt = csmapi.EcefCoord(ground_pt.iloc[0], ground_pt.iloc[1], ground_pt.iloc[2])
         sensor = sensors[serial]
         img_coord = sensor.groundToImage(ground_pt)
         V[i,:] = [row['line'] - img_coord.line, row['sample'] - img_coord.samp]
