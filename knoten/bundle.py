@@ -475,8 +475,10 @@ def compute_sigma0(V, dX, W_parameters, W_observations):
     
     if (dof > 0):
         sigma0 = VTPV/dof
-    else:
+    elif (dof == 0):
         sigma0 = VTPV
+    else:
+        raise ValueError(f"Computed degrees of freedom [{dof}] is invalid.")
 
     return np.sqrt(sigma0)
 
