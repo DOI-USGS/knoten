@@ -117,3 +117,4 @@ print.prt
 *.CUB
 
 .DS_Store
+default.profraw
