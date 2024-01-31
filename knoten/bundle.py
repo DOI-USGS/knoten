@@ -184,7 +184,7 @@ def compute_sensor_partials(sensor, parameters, ground_pt):
        derivatives are in the same order as the parameter list passed in.
     """
     partials = np.zeros((2, len(parameters)))
-    csm_ground = csmapi.EcefCoord(ground_pt.iloc[0], ground_pt.iloc[1], ground_pt.iloc[2])
+    csm_ground = csmapi.EcefCoord(ground_pt[0], ground_pt[1], ground_pt[2])
     for i in range(len(parameters)):
         partials[:, i] = sensor.computeSensorPartials(parameters[i].index, csm_ground)
     return partials
@@ -208,7 +208,7 @@ def compute_ground_partials(sensor, ground_pt):
        partials and the second array is the sample partials. The partial
        derivatives are in (x, y, z) order.
     """
-    csm_ground = csmapi.EcefCoord(ground_pt.iloc[0], ground_pt.iloc[1], ground_pt.iloc[2])
+    csm_ground = csmapi.EcefCoord(ground_pt[0], ground_pt[1], ground_pt[2])
     partials = np.array(sensor.computeGroundPartials(csm_ground))
     return np.reshape(partials, (2, 3))
 
@@ -282,8 +282,8 @@ def compute_jacobian(network, sensors, parameters, coefficient_columns):
         params = parameters[serial]
         image_range = coefficient_columns[serial]
         point_range = coefficient_columns[row["id"]]
-        jacobian[2*i : 2*i+2, image_range[0] : image_range[1]] = compute_sensor_partials(sensor, params, ground_pt)
-        jacobian[2*i : 2*i+2, point_range[0] : point_range[1]] = compute_ground_partials(sensor, ground_pt)
+        jacobian[2*i : 2*i+2, image_range[0] : image_range[1]] = compute_sensor_partials(sensor, params, ground_pt.tolist())
+        jacobian[2*i : 2*i+2, point_range[0] : point_range[1]] = compute_ground_partials(sensor, ground_pt.tolist())
 
     return jacobian
 
@@ -399,7 +399,7 @@ def compute_residuals(network, sensors):
         row = network.iloc[i]
         serial = row["serialnumber"]
         ground_pt = row[["adjustedX", "adjustedY", "adjustedZ"]].values
-        ground_pt = csmapi.EcefCoord(ground_pt.iloc[0], ground_pt.iloc[1], ground_pt.iloc[2])
+        ground_pt = csmapi.EcefCoord(ground_pt[0], ground_pt[1], ground_pt[2])
         sensor = sensors[serial]
         img_coord = sensor.groundToImage(ground_pt)
         V[i,:] = [row['line'] - img_coord.line, row['sample'] - img_coord.samp]
@@ -472,8 +472,15 @@ def compute_sigma0(V, dX, W_parameters, W_observations):
     num_observations = W_observations.shape[0]
     dof = num_observations - num_parameters
     VTPV = V.dot(W_observations).dot(V) + dX.dot(W_parameters).dot(dX)
-    sigma0 = np.sqrt(VTPV/dof)
-    return sigma0
+    
+    if (dof > 0):
+        sigma0 = VTPV/dof
+    elif (dof == 0):
+        sigma0 = VTPV
+    else:
+        raise ValueError(f"Computed degrees of freedom [{dof}] is invalid.")
+
+    return np.sqrt(sigma0)
 
 def compute_sigma0_sparse(V, dX, W_sensors, W_points, W_observations, column_dict):
     """
