@@ -170,7 +170,9 @@ def _(dem, image_pt, camera, max_its = 20, tolerance = 0.001):
 
         px, py = dem.latlon_to_pixel(lat, lon)
         height = dem.read_array(1, [px, py, 1, 1])[0][0]
-
+        if height == dem.no_data_value:
+            raise ValueError(f'No DEM height at {lat}, {lon}')
+    
         next_intersection = camera.imageToGround(image_pt, float(height))
         dist = max(abs(intersection.x - next_intersection.x),
             abs(intersection.y - next_intersection.y),

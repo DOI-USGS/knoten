@@ -36,5 +36,7 @@ release.
 ## Unreleased
 
 ### Changed
-- Removed all `pyproj` calls from csm.py, abstracting them into the reprojection and pyproj.Transformer code inside utils.py. Updated the transformations to use the new pipeline style syntax to avoid deprecation warnings about old syntax.p
+- Removed all `pyproj` calls from csm.py, abstracting them into the reprojection and pyproj.Transformer code inside utils.py. Updated the transformations to use the new pipeline style syntax to avoid deprecation warnings about old syntax.
 
+### Fixed
+- Added a check to `generate_ground_point` when a GeoDataset is used to raise a `ValueError` if the algorithm intersects a no data value in the passed DEM. This ensures that valid heights are used in the intersection computation.
