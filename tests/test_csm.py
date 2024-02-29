@@ -37,7 +37,7 @@ def test_generate_ground_point_with_imagecoord(mock_sensor, pt):
 @mock.patch.object(csm, 'get_radii', return_value=(10,10))
 @mock.patch('pyproj.transformer.Transformer.transform', return_value=(0,0,0))
 @mock.patch.object(csm, '_compute_intersection_distance', return_value=0)
-def test_generate_ground_point_with_dtm(mock_dem, mock_sensor, pt):
+def test_generate_ground_point_with_dtm(mock_sensor, pt, _):
     # Passing the mock_dem fixture fails for some reason. The
     # isinstance(obj, GeoDataset) check fails, causing the singldispath
     # to never dispatch to the func under test.
@@ -55,7 +55,7 @@ from collections import namedtuple
 
 @mock.patch.object(csm, 'get_radii', return_value=(10,10))
 @mock.patch('pyproj.transformer.Transformer.transform', return_value=(0,0,0))
-def test_generate_ground_point_with_dtm_ndv(mock_dem, mock_sensor, pt):
+def test_generate_ground_point_with_dtm_ndv(mock_sensor, pt):
     # Passing the mock_dem fixture fails for some reason. The
     # isinstance(obj, GeoDataset) check fails, causing the singldispath
     # to never dispatch to the func under test.
