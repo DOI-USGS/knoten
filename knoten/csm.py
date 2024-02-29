@@ -157,30 +157,53 @@ def _(dem, image_pt, camera, max_its = 20, tolerance = 0.001):
     intersection = generate_ground_point(0.0, image_pt, camera)
     iterations = 0
     semi_major, semi_minor = get_radii(camera)
-    
+  
     source_proj = f'+proj=cart +a={semi_major} +b={semi_minor}'
     dest_proj = f'+proj=lonlat +a={semi_major} +b={semi_minor}'
     transformer = utils.create_transformer(source_proj, dest_proj)
-
     while iterations != max_its:
-        lon, lat, alt = transformer.transform(intersection.x, 
+        lon, lat, _ = transformer.transform(intersection.x, 
                                               intersection.y, 
                                               intersection.z,
                                               errcheck=True)
 
         px, py = dem.latlon_to_pixel(lat, lon)
         height = dem.read_array(1, [px, py, 1, 1])[0][0]
-
+        if height == dem.no_data_value:
+            raise ValueError(f'No DEM height at {lat}, {lon}')
+    
         next_intersection = camera.imageToGround(image_pt, float(height))
-        dist = max(abs(intersection.x - next_intersection.x),
-            abs(intersection.y - next_intersection.y),
-            abs(intersection.z - next_intersection.z))
+        dist = _compute_intersection_distance(intersection, next_intersection)
 
         intersection = next_intersection
         iterations += 1
         if dist < tolerance:
             break
     return intersection
+
+def _compute_intersection_distance(intersection, next_intersection):
+    """
+    Private func that takes two csmapi Ecef objects or other objects with
+    x,y,z properties and computes the distance between them. This is the
+    maximum distance in 3D space.
+
+    Parameters
+    ----------
+    intersection : object
+                   Any object with x,y, and z properties that are numeric
+
+    next_intersection : object
+                        Any object with x,y, and z properties that are numeric              
+
+    Returns
+    -------
+    dist : float
+           The maximum distance between intersection and next_intersection
+           in one of the three planes (x,y,z)
+    """
+    return max(abs(intersection.x - next_intersection.x),
+            abs(intersection.y - next_intersection.y),
+            abs(intersection.z - next_intersection.z))
 
 def generate_boundary(isize, npoints=10):
     '''
