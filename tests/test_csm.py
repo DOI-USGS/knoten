@@ -7,13 +7,6 @@ import csmapi
 from knoten import csm
 
 @pytest.fixture
-def mock_dem():
-    mock_dem = mock.MagicMock(spec_set=GeoDataset)
-    mock_dem.read_array.return_value = 100
-    mock_dem.latlon_to_pixel.return_value = (0.5,0.5)
-    return mock_dem
-
-@pytest.fixture
 def mock_sensor():
     mock_sensor = mock.MagicMock(spec=csmapi.RasterGM)
     return mock_sensor
