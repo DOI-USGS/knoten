@@ -12,8 +12,8 @@ from numbers import Number
 import numpy as np
 import pandas as pd
 
-from pysis import isis
-from pysis.exceptions import ProcessError
+import kalasiris.pysis as isis
+from kalasiris.pysis import ProcessError
 
 import plotly.graph_objects as go
 import plotly.express as px

@@ -4,7 +4,7 @@ channels:
   - usgs-astrogeology
   - plotly
 dependencies:
-  - ale>=0.8.8
+  - ale>=0.10.0
   - coveralls
   - csmapi>=1.0
   - gdal>=3.0.0
@@ -20,7 +20,7 @@ dependencies:
   - psutil 
   - pvl
   - pyproj
-  - pysis
+  - kalasiris
   - pytest
   - python>=3
   - requests
