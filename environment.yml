@@ -20,7 +20,7 @@ dependencies:
   - psutil 
   - pvl
   - pyproj
-  - pysis
+  - kalasiris
   - pytest
   - python>=3
   - requests
