@@ -35,8 +35,12 @@ release.
 
 ## Unreleased
 
+### Added
+- A check to `generate_ground_point` when a GeoDataset is used to raise a `ValueError` if the algorithm intersects a no data value in the passed DEM. This ensures that valid heights are used in the intersection computation. Fixes [#120](https://github.com/DOI-USGS/knoten/issues/120)
+
 ### Changed
 - Removed all `pyproj` calls from csm.py, abstracting them into the reprojection and pyproj.Transformer code inside utils.py. Updated the transformations to use the new pipeline style syntax to avoid deprecation warnings about old syntax.
 
 ### Fixed
-- Added a check to `generate_ground_point` when a GeoDataset is used to raise a `ValueError` if the algorithm intersects a no data value in the passed DEM. This ensures that valid heights are used in the intersection computation.
+- The init method that searches for the libusgscsm to support searching in the `csmplugins` subdirectory. This approach depends on being able to find `csmapi` in a standard location and then assumes that the `libusgscsm` shared library is in a subdirectoy of that `lib` directory. Fixes [#118](https://github.com/DOI-USGS/knoten/issues/118)
+
