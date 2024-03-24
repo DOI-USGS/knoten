@@ -2,6 +2,7 @@ import ctypes
 from ctypes.util import find_library
 from glob import glob
 import os
+import sys
 import warnings
 
 # Register the usgscam plugin with the csmapi
@@ -12,8 +13,12 @@ if not libusgscsm_path:
     usgscsm_folder = os.path.join(os.path.split(libcsmapi_path)[0], "csmplugins")
     libusgscsm_path = ""
     if os.path.exists(usgscsm_folder):
+        print(sys.platform)
         # Supports py < 3.10, if only supporting 3.10+ use: glob( "*[0-9].[0-9].[0-9].dylib", root_dir=usgscsm_folder)
-        results = glob(os.path.join(usgscsm_folder, "*[0-9].[0-9].[0-9].dylib"))
+        if sys.platform.startswith('darwin'):
+            results = glob(os.path.join(usgscsm_folder, "*[0-9].[0-9].[0-9].dylib"))
+        elif sys.platform.startswith('linux'):
+            results = glob(os.path.join(usgscsm_folder, "*.so"))
         results.sort()
         libusgscsm_path = os.path.join(usgscsm_folder, results[-1])
 
