@@ -1,20 +1,30 @@
 import ctypes
 from ctypes.util import find_library
-from distutils import sysconfig
+from glob import glob
 import os
+import sys
 import warnings
-
-from . import csm
-
-from csmapi import csmapi
 
 # Register the usgscam plugin with the csmapi
 libusgscsm_path = find_library('usgscsm')
-
+    
 if not libusgscsm_path:
-    warnings.warn('libusgscsm not installed, unable to load shared library.')
+    libcsmapi_path = find_library('csmapi')
+    usgscsm_folder = os.path.join(os.path.split(libcsmapi_path)[0], "csmplugins")
+    libusgscsm_path = ""
+    if os.path.exists(usgscsm_folder):
+        # Supports py < 3.10, if only supporting 3.10+ use: glob( "*[0-9].[0-9].[0-9].dylib", root_dir=usgscsm_folder)
+        if sys.platform.startswith('darwin'):
+            results = glob(os.path.join(usgscsm_folder, "*[0-9].[0-9].[0-9].dylib"))
+        elif sys.platform.startswith('linux'):
+            results = glob(os.path.join(usgscsm_folder, "*.so"))
+        results.sort()
+        libusgscsm_path = os.path.join(usgscsm_folder, results[-1])
 
-libusgscsm = ctypes.CDLL(libusgscsm_path)
+if not os.path.exists(libusgscsm_path):
+    warnings.warn('libusgscsm not installed, unable to find shared library.')
 
-if not libusgscsm._name:
-    warnings.warn('Unable to load usgscsm shared library')
+try:
+    libusgscsm = ctypes.CDLL(libusgscsm_path)
+except OSError:
+    warnings.warn(f'Unable to load usgscsm shared library at {libusgscsm_path}')
