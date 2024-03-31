@@ -10,7 +10,7 @@ import requests
 import scipy.stats
 from functools import singledispatch
 
-from plio.io.io_gdal import GeoDataset
+from knoten.surface import EllipsoidDem
 
 from knoten import utils
 class NumpyEncoder(json.JSONEncoder):
@@ -127,7 +127,7 @@ def generate_ground_point(dem, image_pt, camera):
           GeoDataset object generated from Plio off of a Digital Elevation
           Model (DEM)
     image_pt : tuple
-               Pair of x, y coordinates in pixel space
+               Pair of x, y (line, sample) coordinates in pixel space
     camera : object
              USGSCSM camera model object
     max_its : int, optional
@@ -145,11 +145,10 @@ def generate_ground_point(dem, image_pt, camera):
     if not isinstance(image_pt, csmapi.ImageCoord):
         # Support a call where image_pt is in the form (x,y)
         image_pt = csmapi.ImageCoord(*image_pt)
-
     return camera.imageToGround(image_pt, dem)
 
-@generate_ground_point.register(GeoDataset)
-def _(dem, image_pt, camera, max_its = 20, tolerance = 0.001):
+@generate_ground_point.register
+def _(dem: EllipsoidDem, image_pt, camera, max_its = 20, tolerance = 0.0001, dem_type='radius'):
     if not isinstance(image_pt, csmapi.ImageCoord):
         # Support a call where image_pt is in the form (x,y)
         image_pt = csmapi.ImageCoord(*image_pt)
@@ -166,20 +165,22 @@ def _(dem, image_pt, camera, max_its = 20, tolerance = 0.001):
                                               intersection.y, 
                                               intersection.z,
                                               errcheck=True)
-
-        px, py = dem.latlon_to_pixel(lat, lon)
-        height = dem.read_array(1, [px, py, 1, 1])[0][0]
-        if height == dem.no_data_value:
+        height = dem.get_height(lat, lon)
+        if height is None:
             raise ValueError(f'No DEM height at {lat}, {lon}')
-    
-        next_intersection = camera.imageToGround(image_pt, float(height))
-        dist = _compute_intersection_distance(intersection, next_intersection)
 
+        next_intersection = generate_ground_point(float(height), image_pt, camera)
+        dist = _compute_intersection_distance(intersection, next_intersection)
         intersection = next_intersection
         iterations += 1
         if dist < tolerance:
             break
     return intersection
+
+def generate_image_coordinate(ground_pt, camera):
+    if not isinstance(ground_pt, csmapi.EcefCoord):
+        ground_pt = csmapi.EcefCoord(*ground_pt)
+    return camera.groundToImage(ground_pt)
 
 def _compute_intersection_distance(intersection, next_intersection):
     """

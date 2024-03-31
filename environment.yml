@@ -21,7 +21,6 @@ dependencies:
   - pvl
   - pyproj
   - kalasiris
-  - pytest
   - python>=3
   - requests
   - scipy

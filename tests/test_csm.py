@@ -1,18 +1,21 @@
+from collections import namedtuple
 from unittest import mock
 import pytest
 
 from plio.io.io_gdal import GeoDataset
 
 import csmapi
-from knoten import csm
+from knoten import csm, surface
 
 @pytest.fixture
 def mock_dem():
-    mock_dem = mock.MagicMock(spec_set=GeoDataset)
+    mock_surface = mock.MagicMock(spec=surface.GdalDem)
+    mock_dem = mock.MagicMock(spec=GeoDataset)
     mock_dem.no_data_value = 10
     mock_dem.read_array.return_value = [[100]]
     mock_dem.latlon_to_pixel.return_value = (0.5,0.5)
-    return mock_dem
+    mock_surface.dem = mock_dem
+    return mock_surface
 
 @pytest.fixture
 def mock_sensor():
@@ -39,7 +42,7 @@ def test_generate_ground_point_with_imagecoord(mock_sensor, pt):
 @mock.patch.object(csm, '_compute_intersection_distance', return_value=0)
 @mock.patch('pyproj.transformer.Transformer.transform', return_value=(0,0,0))
 def test_generate_ground_point_with_dtm(mock_get_radii, 
-                                        mock_compute_intsesection, 
+                                        mock_compute_intersection, 
                                         mock_pyproj_transformer, 
                                         mock_sensor, pt, mock_dem):
     csm.generate_ground_point(mock_dem, pt, mock_sensor)
@@ -48,16 +51,15 @@ def test_generate_ground_point_with_dtm(mock_get_radii,
     # should always be 2.
     assert mock_sensor.imageToGround.call_count == 2
 
-from collections import namedtuple
 
 @mock.patch.object(csm, 'get_radii', return_value=(10,10))
 @mock.patch('pyproj.transformer.Transformer.transform', return_value=(0,0,0))
 def test_generate_ground_point_with_dtm_ndv(mock_get_radii,
                                             mock_pyproj_transformer,
                                             mock_sensor, pt, mock_dem):
-    mock_dem.no_data_value = 100
+    mock_dem.get_height.return_value = None
     with pytest.raises(ValueError):
-        csm.generate_ground_point(mock_dem, pt, mock_sensor)
+        res = csm.generate_ground_point(mock_dem, pt, mock_sensor)
 
 def test__compute_intersection_distance():
     Point = namedtuple("Point", 'x, y, z')
