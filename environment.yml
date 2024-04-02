@@ -19,6 +19,8 @@ dependencies:
   - plotly-orca 
   - psutil 
   - pvl
+  - pytest
+  - pytest-xdist
   - pyproj
   - kalasiris
   - python>=3

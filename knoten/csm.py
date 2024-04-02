@@ -127,7 +127,7 @@ def generate_ground_point(dem, image_pt, camera):
           GeoDataset object generated from Plio off of a Digital Elevation
           Model (DEM)
     image_pt : tuple
-               Pair of x, y (line, sample) coordinates in pixel space
+               Pair of x, y (sample, line) coordinates in pixel space
     camera : object
              USGSCSM camera model object
     max_its : int, optional
