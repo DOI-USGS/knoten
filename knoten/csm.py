@@ -74,22 +74,26 @@ def create_camera(label, url='http://pfeffer.wr.usgs.gov/api/1.0/pds/'):
         model = plugin.constructModelFromISD(isd, model_name)
         return model
 
-def create_csm(image, verbose=False):
-    """
-    Given an image file, create a Community Sensor Model.
+def _from_state(state, verbose):
+    with open(state, 'r') as stream:
+        model_name = stream.readline().rstrip()
+        state = json.load(stream)
+    state = json.dumps(state)
 
-    Parameters
-    ----------
-    image : str
-            The image filename to create a CSM for
-    verbose : bool
-              Print information about which plugins and models were attempted
+    plugins = csmapi.Plugin.getList()
+    for plugin in plugins:
+        if verbose:
+            print(f'Trying plugin {plugin.getPluginName()}')
+        if plugin.canModelBeConstructedFromState(model_name, state):
+            camera_warnings = csmapi.WarningList()
+            camera = plugin.constructModelFromState(state, camera_warnings)
+            if verbose:
+                for warning in camera_warnings:
+                    print(f'Warning in function {warning.getFunction()}: "{warning.getMessage()}"')
+                print('Success!')
+            return plugin.constructModelFromState(state)
 
-    Returns
-    -------
-    model : object
-            A CSM sensor model (or None if no associated model is available.)
-    """
+def _from_isd(image, verbose):
     isd = csmapi.Isd(image)
     plugins = csmapi.Plugin.getList()
     for plugin in plugins:
@@ -113,6 +117,34 @@ def create_csm(image, verbose=False):
                 for warning in warnings:
                     print(f'Warning in function {warning.getFunction()}: "{warning.getMessage()}"')
                 print('Failed!')
+    raise TypeError('NoneType is not a sensor model.')
+
+def create_csm(image, verbose=False):
+    """
+    Given an image file, create a Community Sensor Model.
+
+    Parameters
+    ----------
+    image : str
+            The image filename to create a CSM for
+    verbose : bool
+              Print information about which plugins and models were attempted
+
+    Returns
+    -------
+    model : object
+            A CSM sensor model (or None if no associated model is available.)
+    """
+    try:
+        return _from_isd(image, verbose=verbose)
+    except:
+        if verbose:
+            print('Unable to instantiate CSM from ISD')
+    try:
+        return _from_state(image, verbose=verbose)
+    except:
+        if verbose:
+            print('Unable to instantiate CSM from state file.')
 
 @singledispatch
 def generate_ground_point(dem, image_pt, camera):
@@ -551,3 +583,4 @@ def triangulate_ground_pt(cameras, image_pts):
         M[2] += look[2] * look - look_squared * unit_z
         b += np.dot(pos, look) * look - look_squared * pos
     return tuple(np.dot(np.linalg.inv(M), b))
+
