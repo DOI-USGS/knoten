@@ -36,6 +36,7 @@ release.
 ## Unreleased
 
 ### Added
+- `create_csm` now dispatches to `_from_isd` and `_from_state` to test whether the sensor model can be instantiated from either and ISD or a state file.
 - `generate_image_coordinate` to `csm.py`. This provides a similar interface to `generate_ground_coordinate` and abstracts away the `csmapi` from the user.
 - A surface class (moved from AutoCNet; credit @jessemapel) with support for Ellipsoid DEMs and basic support for raster DEMs readable by the plio.io.io_gdal.GeoDataset. Support is basic because it uses a single pixel intersection and not an interpolated elevation like ISIS does.
 - A check to `generate_ground_point` when a GeoDataset is used to raise a `ValueError` if the algorithm intersects a no data value in the passed DEM. This ensures that valid heights are used in the intersection computation. Fixes [#120](https://github.com/DOI-USGS/knoten/issues/120)
