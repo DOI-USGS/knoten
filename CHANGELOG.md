@@ -35,6 +35,9 @@ release.
 
 ## Unreleased
 
+
+## [0.3.0] - 2024-04-14
+
 ### Added
 - `create_csm` now dispatches to `_from_isd` and `_from_state` to test whether the sensor model can be instantiated from either and ISD or a state file.
 - `generate_image_coordinate` to `csm.py`. This provides a similar interface to `generate_ground_coordinate` and abstracts away the `csmapi` from the user.
