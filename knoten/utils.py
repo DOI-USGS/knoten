@@ -1,6 +1,5 @@
 import pyproj
 import numpy as np 
-# from collections import namedtuple
 from typing import NamedTuple
 
 class Point(NamedTuple):
