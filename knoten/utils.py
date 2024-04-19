@@ -1,11 +1,39 @@
 import pyproj
 import numpy as np 
-from collections import namedtuple
+# from collections import namedtuple
+from typing import NamedTuple
 
-def sep_angle(a_pt, b_pt, c_pt):
-    return sep_angle(a_pt - b_pt, c_pt - b_pt)
+class Point(NamedTuple):
+    x: float
+    y: float
+    z: float
+
+class LatLon(NamedTuple):
+    lat: float
+    lon: float
+
+class Sphere(NamedTuple):
+    lat: float
+    lon: float
+    radius: float
+
+class Matrix(NamedTuple):
+    vec_a: Point
+    vec_b: Point
+    vec_c: Point
 
 def sep_angle(a_vec, b_vec):
+    """
+    Parameters
+    ----------
+    a_vec : Point object (x, y, z)
+
+    b_vec : Point object (x, y, z)
+
+    Returns
+    -------
+    : float
+    """
     dot_prod = a_vec.x * b_vec.x + a_vec.y * b_vec.y + a_vec.z * b_vec.z
     dot_prod /= magnitude(a_vec) * magnitude(b_vec)
 
@@ -15,17 +43,43 @@ def sep_angle(a_vec, b_vec):
     return np.arccos(dot_prod)
 
 def magnitude(vec):
+    """
+    Parameters
+    ----------
+    vec : Point object (x, y, z)
+
+    Returns
+    -------
+    : float
+    """
     return np.sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z)
 
 def distance(start, stop):
-    Point = namedtuple("Point", 'x, y, z')
+    """
+    Parameters
+    ----------
+    start : Point object (x, y, z)
+
+    stop : Point object (x, y, z)
+
+    Returns
+    -------
+    : float
+    """
     diff = Point(stop.x - start.x, stop.y - start.y, stop.z - start.z)
 
     return magnitude(diff)
 
 def radiansToDegrees(radian_lat_lon):
-    LatLon = namedtuple("LatLon", 'lat lon')
+    """
+    Parameters
+    ----------
+    radian_lat_lon : LatLon object (lat, lon) in radians
 
+    Returns
+    -------
+    : LatLon object (lat, lon) in degrees
+    """
     degree_lon = radian_lat_lon.lon
     if (degree_lon < 0):
       degree_lon += 2 * np.pi
@@ -35,8 +89,15 @@ def radiansToDegrees(radian_lat_lon):
     return LatLon(degreeLat, degree_lon)
 
 def spherical_to_rect(spherical):
-    Point = namedtuple("Point", 'x, y, z')
+    """
+    Parameters
+    ----------
+    spherical : Sphere object (lat, lon, radius)
 
+    Returns
+    -------
+    : Point object (x, y, z)
+    """
     x = spherical.radius * np.cos(spherical.lat) * np.cos(spherical.lon)
     y = spherical.radius * np.cos(spherical.lat) * np.sin(spherical.lon)
     z = spherical.radius * np.sin(spherical.lat)
@@ -44,8 +105,15 @@ def spherical_to_rect(spherical):
     return Point(x, y, z)
 
 def rect_to_spherical(rectangular):
-    Sphere = namedtuple("Sphere", 'lat, lon, radius')
+    """
+    Parameters
+    ----------
+    rectangular : Point object (x, y, z)
 
+    Returns
+    -------
+    : Sphere object (lat, lon, radius)
+    """
     rad = magnitude(rectangular)
     if (rad < 1e-15):
       return Sphere(0.0, 0.0, 0.0)
@@ -57,8 +125,17 @@ def rect_to_spherical(rectangular):
     )
 
 def ground_azimuth(ground_pt, sub_pt):
-    LatLon = namedtuple("LatLon", 'lat lon')
+    """
+    Parameters
+    ----------
+    ground_pt : LatLon object (lat, lon)
 
+    sub_pt : LatLon object (lat, lon)
+
+    Returns
+    -------
+    : float
+    """
     if (ground_pt.lat >= 0.0):
       a = (90.0 - sub_pt.lat) * np.pi / 180.0
       b = (90.0 - ground_pt.lat) * np.pi / 180.0
@@ -128,19 +205,47 @@ def ground_azimuth(ground_pt, sub_pt):
     return azimuth
 
 def crossProduct(a_vec, b_vec):
-    Point = namedtuple("Point", 'x, y, z')
+    """
+    Parameters
+    ----------
+    a_vec : Point object (x, y, z)
 
+    b_vec : Point object (x, y, z)
+
+    Returns
+    -------
+    : Point object (x, y, z)
+    """
     x = a_vec.y * b_vec.z - a_vec.z * b_vec.y
     y = a_vec.z * b_vec.x - a_vec.x * b_vec.z
     z = a_vec.x * b_vec.y - a_vec.y * b_vec.x
     return Point(x, y, z)
 
-
 def unit_vector(vec):
+    """
+    Parameters
+    ----------
+    vec : Point object (x, y, z)
+
+    Returns
+    -------
+    : Point object (x, y, z)
+    """
     mag = magnitude(vec)
     return vec / mag
 
 def perpendicular_vector(a_vec, b_vec):
+    """
+    Parameters
+    ----------
+    a_vec : Point object (x, y, z)
+
+    b_vec : Point object (x, y, z)
+
+    Returns
+    -------
+    : Point object (x, y, z)
+    """
     if (magnitude(a_vec) == 0):
       return b_vec
 
@@ -157,16 +262,34 @@ def perpendicular_vector(a_vec, b_vec):
     return q
 
 def scale_vector(vec, scalar):
-    Point = namedtuple("Point", 'x, y, z')
+    """
+    Parameters
+    ----------
+    vec : Point object (x, y, z)
 
+    scalar : float
+
+    Returns
+    -------
+    : Point object (x, y, z)
+    """
     return Point(vec.x * scalar, vec.y * scalar, vec.z * scalar)
 
-def matrixVecProduct(mat, vec):
-    Point = namedtuple("Point", 'x, y, z')
+def matrix_vec_product(mat, vec):
+    """
+    Parameters
+    ----------
+    mat : Matrix object (vec_a, vec_b, vec_c)
 
-    x = mat.a.x * vec.x + mat.a.y * vec.y + mat.a.z * vec.z
-    y = mat.b.x * vec.x + mat.b.y * vec.y + mat.b.z * vec.z
-    z = mat.c.x * vec.x + mat.c.y * vec.y + mat.c.z * vec.z
+    vec : Point object (x, y, z)
+
+    Returns
+    -------
+    : Point object (x, y, z)
+    """
+    x = mat.vec_a.x * vec.x + mat.vec_a.y * vec.y + mat.vec_a.z * vec.z
+    y = mat.vec_b.x * vec.x + mat.vec_b.y * vec.y + mat.vec_b.z * vec.z
+    z = mat.vec_c.x * vec.x + mat.vec_c.y * vec.y + mat.vec_c.z * vec.z
 
     return Point(x, y, z)
 
