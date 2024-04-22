@@ -3,18 +3,18 @@ import numpy as np
 from typing import NamedTuple
 
 class Point(NamedTuple):
-    x: float
-    y: float
-    z: float
+    x: np.double
+    y: np.double
+    z: np.double
 
 class LatLon(NamedTuple):
-    lat: float
-    lon: float
+    lat: np.double
+    lon: np.double
 
 class Sphere(NamedTuple):
-    lat: float
-    lon: float
-    radius: float
+    lat: np.double
+    lon: np.double
+    radius: np.double
 
 class Matrix(NamedTuple):
     vec_a: Point
@@ -69,7 +69,7 @@ def distance(start, stop):
 
     return magnitude(diff)
 
-def radiansToDegrees(radian_lat_lon):
+def radians_to_degrees(radian_lat_lon):
     """
     Parameters
     ----------
@@ -84,8 +84,8 @@ def radiansToDegrees(radian_lat_lon):
       degree_lon += 2 * np.pi
 
     degree_lon = np.rad2deg(degree_lon)
-    degreeLat = np.rad2deg(radian_lat_lon.lat)
-    return LatLon(degreeLat, degree_lon)
+    degree_lat = np.rad2deg(radian_lat_lon.lat)
+    return LatLon(degree_lat, degree_lon)
 
 def spherical_to_rect(spherical):
     """
