@@ -92,13 +92,3 @@ def test_scale_vector():
   scalar = 3.0
   result = utils.Point(3.0, 6.0, -9.0)
   np.testing.assert_array_equal(utils.scale_vector(vec, scalar), result)
-
-def test_matrix_vec_product():
-  vec_a = utils.Point(0.0,  1.0,  0.0)
-  vec_b = utils.Point(-1.0,  0.0,  0.0)
-  vec_c = utils.Point(0.0,  0.0,  1.0)
-  mat = utils.Matrix(vec_a, vec_b, vec_c)
-  vec = utils.Point(1.0,  2.0,  3.0)
-
-  result = utils.Point(2.0, -1.0, 3.0)
-  np.testing.assert_array_equal(result, utils.matrix_vec_product(mat, vec))

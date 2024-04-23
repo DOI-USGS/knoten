@@ -3,23 +3,18 @@ import numpy as np
 from typing import NamedTuple
 
 class Point(NamedTuple):
-    x: np.double
-    y: np.double
-    z: np.double
+    x: np.ndarray
+    y: np.ndarray
+    z: np.ndarray
 
 class LatLon(NamedTuple):
-    lat: np.double
-    lon: np.double
-
+    lat: np.ndarray
+    lon: np.ndarray
+# np.narray
 class Sphere(NamedTuple):
-    lat: np.double
-    lon: np.double
-    radius: np.double
-
-class Matrix(NamedTuple):
-    vec_a: Point
-    vec_b: Point
-    vec_c: Point
+    lat: np.ndarray
+    lon: np.ndarray
+    radius: np.ndarray
 
 def sep_angle(a_vec, b_vec):
     """
@@ -31,7 +26,7 @@ def sep_angle(a_vec, b_vec):
 
     Returns
     -------
-    : float
+    : np.ndarray
     """
     dot_prod = a_vec.x * b_vec.x + a_vec.y * b_vec.y + a_vec.z * b_vec.z
     dot_prod /= magnitude(a_vec) * magnitude(b_vec)
@@ -49,7 +44,7 @@ def magnitude(vec):
 
     Returns
     -------
-    : float
+    : np.ndarray
     """
     return np.sqrt(vec.x * vec.x + vec.y * vec.y + vec.z * vec.z)
 
@@ -63,7 +58,7 @@ def distance(start, stop):
 
     Returns
     -------
-    : float
+    : np.ndarray
     """
     diff = Point(stop.x - start.x, stop.y - start.y, stop.z - start.z)
 
@@ -133,7 +128,7 @@ def ground_azimuth(ground_pt, sub_pt):
 
     Returns
     -------
-    : float
+    : np.ndarray
     """
     if (ground_pt.lat >= 0.0):
       a = (90.0 - sub_pt.lat) * np.pi / 180.0
@@ -266,31 +261,13 @@ def scale_vector(vec, scalar):
     ----------
     vec : Point object (x, y, z)
 
-    scalar : float
+    scalar : np.ndarray
 
     Returns
     -------
     : Point object (x, y, z)
     """
     return Point(vec.x * scalar, vec.y * scalar, vec.z * scalar)
-
-def matrix_vec_product(mat, vec):
-    """
-    Parameters
-    ----------
-    mat : Matrix object (vec_a, vec_b, vec_c)
-
-    vec : Point object (x, y, z)
-
-    Returns
-    -------
-    : Point object (x, y, z)
-    """
-    x = mat.vec_a.x * vec.x + mat.vec_a.y * vec.y + mat.vec_a.z * vec.z
-    y = mat.vec_b.x * vec.x + mat.vec_b.y * vec.y + mat.vec_b.z * vec.z
-    z = mat.vec_c.x * vec.x + mat.vec_c.y * vec.y + mat.vec_c.z * vec.z
-
-    return Point(x, y, z)
 
 def reproject(record, semi_major, semi_minor, source_proj, dest_proj, **kwargs):
     """
