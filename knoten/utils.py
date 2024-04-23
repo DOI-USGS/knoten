@@ -10,7 +10,7 @@ class Point(NamedTuple):
 class LatLon(NamedTuple):
     lat: np.ndarray
     lon: np.ndarray
-# np.narray
+
 class Sphere(NamedTuple):
     lat: np.ndarray
     lon: np.ndarray
