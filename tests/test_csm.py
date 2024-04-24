@@ -5,7 +5,7 @@ import pytest
 from plio.io.io_gdal import GeoDataset
 
 import csmapi
-from knoten import csm, surface
+from knoten import csm, surface, utils
 
 @pytest.fixture
 def mock_dem():
@@ -67,3 +67,30 @@ def test__compute_intersection_distance():
     pt2 = Point(1,1,1)
     dist = csm._compute_intersection_distance(pt1, pt2)
     assert dist == 1
+
+
+def test_get_state(mock_sensor, pt):
+    Locus = namedtuple("Locus", 'point direction')
+
+    mock_sensor.getImageTime.return_value = 0.0
+    mock_sensor.imageToRemoteImagingLocus.return_value = Locus(utils.Point(0, 1, 2), utils.Point(0, 1, 2))
+    mock_sensor.getSensorPosition.return_value = utils.Point(2, 2, 2)
+
+    state = csm.get_state(mock_sensor, pt)
+
+    expected = {
+        "lookVec": utils.Point(0, 1, 2),
+        "sensorPos": utils.Point(2, 2, 2),
+        "sensorTime": 0.0,
+        "imagePoint": pt
+    }
+
+    assert state == expected
+
+
+@mock.patch.object(csm, 'get_radii', return_value=(10, 10))
+def test_get_surface_normal(mock_sensor):
+    ground_pt = utils.Point(1, 0, 0)
+    normal = csm.get_surface_normal(mock_sensor, ground_pt)
+
+    assert normal == (1.0, 0.0, 0.0)

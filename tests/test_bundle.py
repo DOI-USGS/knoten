@@ -121,6 +121,15 @@ def test_compute_ground_partials():
     partials = bundle.compute_ground_partials(sensor, ground_pt)
     np.testing.assert_array_equal(partials, [[1, 2, 3], [4, 5, 6]])
 
+def test_compute_image_partials():
+    ground_pt = [9, 8, 10]
+    sensor = mock.MagicMock(spec=csmapi.RasterGM)
+    sensor.computeGroundPartials.return_value = (1, 2, 3, 4, 5, 6)
+    partials = bundle.compute_image_partials(sensor, ground_pt)
+    np.testing.assert_allclose(partials, np.array([-0.94444444, 0.44444444, 
+                                                   -0.11111111, 0.11111111, 
+                                                   0.72222222, -0.22222222]))
+
 def test_compute_jacobian(control_network, sensors):
     parameters = {sn: [mock.MagicMock()]*2 for sn in sensors}
     sensor_partials = [(i+1) * np.ones((2, 2)) for i in range(9)]
