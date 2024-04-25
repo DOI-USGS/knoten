@@ -9,7 +9,6 @@ import numpy as np
 import requests
 import scipy.stats
 from functools import singledispatch
-import spiceypy as spice
 
 from knoten.surface import EllipsoidDem
 
@@ -41,28 +40,6 @@ def get_radii(camera):
     semi_major = ellipsoid.getSemiMajorRadius()
     semi_minor = ellipsoid.getSemiMinorRadius()
     return semi_major, semi_minor
-
-def get_surface_normal(sensor, ground_pt):
-    """
-    Given a sensor model and ground point, calculate the surface normal.
-
-    Parameters
-    ----------
-    sensor : object
-             A CSM compliant sensor model object
-
-    ground_pt: tuple
-               The ground point as an (x, y, z) tuple
-
-    Returns
-    -------
-     : tuple
-       in the form (x, y, z)
-    """
-    semi_major, semi_minor = get_radii(sensor)
-
-    normal = spice.surfnm(semi_major, semi_major, semi_minor, np.array([ground_pt.x, ground_pt.y, ground_pt.z]))
-    return utils.Point(normal[0], normal[1], normal[2])
 
 def create_camera(label, url='http://pfeffer.wr.usgs.gov/api/1.0/pds/'):
     """
@@ -114,6 +91,9 @@ def get_state(sensor, image_pt):
     : dict
         Dictionary containing lookVec, sensorPos, sensorTime, and imagePoint
     """
+    if not isinstance(sensor, csmapi.RasterGM):
+        raise TypeError("inputted sensor not a csm.RasterGM object")
+    
     sensor_time = sensor.getImageTime(image_pt)
     locus = sensor.imageToRemoteImagingLocus(image_pt)
     sensor_position = sensor.getSensorPosition(image_pt)
