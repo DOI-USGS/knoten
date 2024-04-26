@@ -5,7 +5,7 @@ import csmapi
 
 class Ellipsoid:
     """
-    A biaxial ellipsoid shape model.
+    A biaxial or triaxial ellipsoid shape model.
     """
 
     def __init__(self, semi_major, semi_minor=None, median=None):
@@ -15,9 +15,11 @@ class Ellipsoid:
         Parameters
         ----------
         semi_major : float
-                     The equatorial semi-major radius of the ellipsoid.
+                    Length of ellipsoid semi-axis along the x-axis.
         semi_minor : float
-                     The polar semi-minor radius of the ellipsoid.
+                    Length of ellipsoid semi-axis along the z-axis.
+        median     : float
+                    Length of ellipsoid semi-axis along the y-axis.
         """
         self.a = semi_major
         self.b = semi_major
@@ -34,7 +36,8 @@ class Ellipsoid:
     def from_csm_sensor(cls, sensor):
         semi_major, semi_minor = csm.get_radii(sensor)
         return cls(semi_major, semi_minor)
-    
+
+
     def get_surface_normal(self, ground_pt):
         """
         Given a ground point, calculate the surface normal.
