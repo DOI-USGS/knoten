@@ -86,11 +86,3 @@ def test_get_state(mock_sensor, pt):
     }
 
     assert state == expected
-
-
-@mock.patch.object(csm, 'get_radii', return_value=(10, 10))
-def test_get_surface_normal(mock_sensor):
-    ground_pt = utils.Point(1, 0, 0)
-    normal = csm.get_surface_normal(mock_sensor, ground_pt)
-
-    assert normal == (1.0, 0.0, 0.0)

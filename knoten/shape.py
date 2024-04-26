@@ -8,7 +8,7 @@ class Ellipsoid:
     A biaxial ellipsoid shape model.
     """
 
-    def __init__(self, semi_major, semi_minor = None):
+    def __init__(self, semi_major, semi_minor=None, median=None):
         """
         Create an ellipsoid shape model from a set of radii
 
@@ -23,8 +23,12 @@ class Ellipsoid:
         self.b = semi_major
         self.c = semi_major
 
+        if median is not None:
+            self.b = median
+
         if semi_minor is not None:
             self.c = semi_minor
+
 
     @classmethod
     def from_csm_sensor(cls, sensor):

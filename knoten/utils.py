@@ -29,6 +29,7 @@ def sep_angle(a_vec, b_vec):
     : np.ndarray
     """
     dot_prod = a_vec.x * b_vec.x + a_vec.y * b_vec.y + a_vec.z * b_vec.z
+    print(dot_prod)
     dot_prod /= magnitude(a_vec) * magnitude(b_vec)
 
     if(dot_prod >= 1.0): return 0.0

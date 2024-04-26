@@ -34,7 +34,7 @@ def phase_angle(image_pt, sensor, shape, illuminator):
 
     sensor_state = csm.get_state(sensor, image_pt)
     ground_pt = shape.intersect_surface(sensor_state["sensorPos"], sensor_state["lookVec"])
-  
+
     illum_pos = illuminator.get_position_from_csm_sensor(sensor, ground_pt)
 
     vec_a = utils.Point(sensor_state["sensorPos"].x - ground_pt.x, 
@@ -44,7 +44,7 @@ def phase_angle(image_pt, sensor, shape, illuminator):
     vec_b = utils.Point(illum_pos.x - ground_pt.x, 
                         illum_pos.y - ground_pt.y, 
                         illum_pos.z - ground_pt.z)
-  
+
     return np.rad2deg(utils.sep_angle(vec_a, vec_b))
 
 def emission_angle(image_pt, sensor, shape):
