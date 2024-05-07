@@ -4,6 +4,17 @@ Knoten
 A library to leverage python wrapped Community Sensor Models (CSMs) for common spatial/sensor operations and testing.
 
 
+Table of Contents
+-----------------
+
+:Date: |today|
+
+.. toctree::
+   :maxdepth: 2
+
+   library/index
+   
+
 References
 ----------
 

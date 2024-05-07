@@ -239,8 +239,9 @@ def _compute_intersection_distance(intersection, next_intersection):
             abs(intersection.z - next_intersection.z))
 
 def generate_boundary(isize, npoints=10):
-    '''
+    """
     Generates a bounding box given a camera model
+
     Parameters
     ----------
     isize : list
@@ -252,7 +253,7 @@ def generate_boundary(isize, npoints=10):
     -------
     boundary : list
                List of full bounding box
-    '''
+    """
     x = np.linspace(0, isize[0], npoints)
     y = np.linspace(0, isize[1], npoints)
     boundary = [(i,0.) for i in x] + [(isize[0], i) for i in y[1:]] +\
@@ -261,7 +262,7 @@ def generate_boundary(isize, npoints=10):
     return boundary
 
 def generate_latlon_boundary(camera, boundary, dem=0.0, radii=None, **kwargs):
-    '''
+    """
     Generates a latlon bounding box given a camera model
 
     Parameters
@@ -286,7 +287,7 @@ def generate_latlon_boundary(camera, boundary, dem=0.0, radii=None, **kwargs):
            List of latitude values
     alts : list
            List of altitude values
-    '''
+    """
 
     if radii is None:
         semi_major, semi_minor = get_radii(camera)
@@ -312,9 +313,10 @@ def generate_latlon_boundary(camera, boundary, dem=0.0, radii=None, **kwargs):
     return lons, lats, alts
 
 def generate_gcps(camera, boundary, radii=None):
-    '''
+    """
     Generates an area of ground control points formated as:
     <GCP Id="" Info="" Pixel="" Line="" X="" Y="" Z="" /> per record
+
     Parameters
     ----------
     camera : object
@@ -329,7 +331,7 @@ def generate_gcps(camera, boundary, radii=None):
     -------
     gcps : list
            List of all gcp records generated
-    '''
+    """
     if radii is None:
         semi_major, semi_minor = get_radii(camera)
     else:
@@ -349,8 +351,9 @@ def generate_gcps(camera, boundary, radii=None):
     return gcps
 
 def generate_latlon_footprint(camera, boundary, dem=0.0, radii=None, **kwargs):
-    '''
+    """
     Generates a latlon footprint from a csmapi generated camera model
+
     Parameters
     ----------
     camera : object
@@ -369,7 +372,7 @@ def generate_latlon_footprint(camera, boundary, dem=0.0, radii=None, **kwargs):
     -------
     : object
       ogr multipolygon containing between one and two polygons
-    '''
+    """
     if radii is None:
         semi_major, semi_minor = get_radii(camera)
     else:
@@ -431,8 +434,9 @@ def generate_latlon_footprint(camera, boundary, dem=0.0, radii=None, **kwargs):
     return multipoly
 
 def generate_bodyfixed_footprint(camera, boundary, radii=None):
-    '''
+    """
     Generates a bodyfixed footprint from a csmapi generated camera model
+    
     Parameters
     ----------
     camera : object
@@ -447,7 +451,7 @@ def generate_bodyfixed_footprint(camera, boundary, radii=None):
     -------
     : object
       ogr polygon
-    '''
+    """
     if radii is None:
         semi_major, semi_minor = get_radii(camera)
     else:
