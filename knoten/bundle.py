@@ -212,6 +212,35 @@ def compute_ground_partials(sensor, ground_pt):
     partials = np.array(sensor.computeGroundPartials(csm_ground))
     return np.reshape(partials, (2, 3))
 
+def compute_image_partials(sensor, ground_pt):
+    """
+    Compute the partial derivatives of the ground point with respect to
+    the line and sample at a ground point.
+
+    These are not normally available from the CSM model, so we use
+    csm::RasterGM::computeGroundPartials to get the Jacobian of the ground to
+    image transformation. Then we use the pseudoinverse of that to get the
+    Jacobian of the image to ground transformation.
+
+    Parameters
+    ----------
+    sensor : CSM sensor
+             The CSM sensor model
+    ground_pt : array
+                The (x, y, z) ground point to compute the partial derivatives W.R.T.
+
+    Returns
+    -------
+     : array
+       The partial derivatives of the image to ground transformation
+    """
+    if isinstance(ground_pt, csmapi.EcefCoord):
+        ground_pt = [ground_pt.x, ground_pt.y, ground_pt.z]
+    ground_matrix = compute_ground_partials(sensor, ground_pt)
+    image_matrix = np.linalg.pinv(ground_matrix)
+
+    return image_matrix.flatten()
+
 def compute_coefficient_columns(network, sensors, parameters):
     """
     Compute the columns for different coefficients

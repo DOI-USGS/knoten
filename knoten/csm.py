@@ -73,6 +73,38 @@ def create_camera(label, url='http://pfeffer.wr.usgs.gov/api/1.0/pds/'):
     if plugin.canModelBeConstructedFromISD(isd, model_name):
         model = plugin.constructModelFromISD(isd, model_name)
         return model
+    
+def get_state(sensor, image_pt):
+    """
+    Get the state of the sensor model at a given image point.
+
+    Parameters
+    ----------
+    sensor : object
+             A CSM compliant sensor model object
+
+    image_pt : tuple
+               Pair of x, y (sample, line) coordinates in pixel space
+
+    Returns
+    -------
+    : dict
+        Dictionary containing lookVec, sensorPos, sensorTime, and imagePoint
+    """
+    if not isinstance(sensor, csmapi.RasterGM):
+        raise TypeError("inputted sensor not a csm.RasterGM object")
+    
+    sensor_time = sensor.getImageTime(image_pt)
+    locus = sensor.imageToRemoteImagingLocus(image_pt)
+    sensor_position = sensor.getSensorPosition(image_pt)
+
+    sensor_state = {
+        "lookVec": locus.direction,
+        "sensorPos": sensor_position,
+        "sensorTime": sensor_time,
+        "imagePoint": image_pt
+    }
+    return sensor_state
 
 def _from_state(state, verbose):
     with open(state, 'r') as stream:
