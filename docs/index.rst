@@ -18,13 +18,13 @@ Table of Contents
 References
 ----------
 
-- CSM (usgscsm): https://github.com/USGS-Astrogeology/usgscsm
-- Abstraction Layer for Ephemerides (ALE): https://github.com/USGS-Astrogeology/ale
+- CSM (usgscsm): https://github.com/DOI-USGS/usgscsm
+- Abstraction Layer for Ephemerides (ALE): https://github.com/DOI-USGS/ale
 
 Overview
 --------
 
-We currently use Knoten to help test our supported CSM implementations against well established `ISIS3 camera models <https://github.com/USGS-Astrogeology/ISIS3>`_. In short, The CSM standard, now at version 3.0.3, is a framework that provides a well-defined application program interface (API) for multiple types of sensors and has been widely adopted by remote sensing software systems (e.g. BAE's Socet GXP, Harris Corp.'s ENVI, Hexagon's ERDAS Imagine, and recently added to the NASA AMES Stereo Pipeline [ASP]). Our support for CSM is explained in this `abstract <https://www.hou.usra.edu/meetings/informatics2018/pdf/6040.pdf>`_ and a recently submitted paper (not yet available). Currently, we support **Framing** and **Pushbroom** (line scanner) types of sensor models in the `usgscsm <https://github.com/USGS-Astrogeology/usgscsm>`_ library. 
+We currently use Knoten to help test our supported CSM implementations against well established `ISIS3 camera models <https://github.com/DOI-USGS/ISIS3>`_. In short, The CSM standard, now at version 3.0.3, is a framework that provides a well-defined application program interface (API) for multiple types of sensors and has been widely adopted by remote sensing software systems (e.g. BAE's Socet GXP, Harris Corp.'s ENVI, Hexagon's ERDAS Imagine, and recently added to the NASA AMES Stereo Pipeline [ASP]). Our support for CSM is explained in this `abstract <https://www.hou.usra.edu/meetings/informatics2018/pdf/6040.pdf>`_ and a recently submitted paper (not yet available). Currently, we support **Framing** and **Pushbroom** (line scanner) types of sensor models in the `usgscsm <https://github.com/DOI-USGS/usgscsm>`_ library. 
 
 A secondary requirement for our CSM implementation requires an ALE-generated Image Support Data (ISD). ISDs contain the `SPICE-derived <https://naif.jpl.nasa.gov/naif/toolkit.html>`_ positional (and when needed velocity) description for each image. You can find several generated JSON-formatted examples `here <https://github.com/DOI-USGS/knoten/blob/main/examples/data>`_.
 
