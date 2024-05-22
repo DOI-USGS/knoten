@@ -134,8 +134,6 @@ def point_info(cube_path, x, y, point_type, allow_outside=False):
 
 
 def plot_diff(data, title='diff plot', colx='x', coly='y', coldx='diffx', coldy='diffy', colmag='magnitude', width=500, height=500):
-    import matplotlib.cm as cm
-    from matplotlib.colors import Normalize
 
     fig = make_subplots(rows=2, cols=2, column_widths=[0.9, .1], row_width=[.9, .1],
                         shared_xaxes=True, shared_yaxes=True, horizontal_spacing = 0.01, vertical_spacing = 0.01)
@@ -175,7 +173,7 @@ def plot_diff(data, title='diff plot', colx='x', coly='y', coldx='diffx', coldy=
                         colorscale="viridis",
                 )), row=2, col=1)
 
-    xavg = data.groupby(colx).apply(np.mean)
+    xavg = data.groupby(colx).mean()
     fig.add_trace(go.Scatter(x=xavg.index, y=xavg[colmag],
         customdata=xavg,
         name=f'{colx} mean error',
@@ -187,7 +185,7 @@ def plot_diff(data, title='diff plot', colx='x', coly='y', coldx='diffx', coldy=
                 colorscale="viridis",
         )), row=1, col=1)
 
-    yavg = data.groupby(coly).apply(np.mean)
+    yavg = data.groupby(coly).mean()
     fig.add_trace(go.Scatter(x=yavg[colmag],y=yavg.index,
         customdata=yavg,
         name=f'{coly} mean error',
