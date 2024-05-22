@@ -35,8 +35,6 @@ requirements:
     - scipy
     - shapely
     - usgscsm>=2.0
-    - kalasiris
-    - plotly
 
 test:
   imports:
