@@ -59,21 +59,3 @@ To build the docs:
 1. Browse to the `index.html` file in `docs/public` to open the docs.  If needed, run a utility like `http-server` in the `docs/public` directory to serve the docs on localhost.
 
 <hr>
-
-## Status Report - November 2019
-
-For full testing reports and example usage, please see the linked example Jupyter notebooks in the table below. 
-
-|       Instrument      |                      Jupyter Notebooks                     |  Production Ready |    Difference CSM -> ISIS (in pixels)   |    Difference ISIS -> CSM (in pixels)   |
-|:---------------------:|:-------------------------------------------------:|:-----------------:|:---------------------------------------:|:---------------------------------------:|
-|       MRO HiRISE      |     [link](examples/mro_hirise_isis_cmp.ipynb)    |     sub-pixel; in testing for production    | sample mean=-2.0e-05; line mean=2.5e-08 | sample mean=-3.0e-08; line mean=1.2e-04 |
-|        MRO CTX        |      [link](examples/mro_ctx_isis_cmp.ipynb)      | nearly sub-pixel; still in research |  gross error in line  |     sample mean=0.0002; line mean=-0.07     |
-|        MEX HRSC       |      [link](examples/mex_hrsc_isis_cmp.ipynb)     |         sub-pixel; in testing for production        |      sample mean=0.000038; line mean=-0.000072      |       sample mean=-0.000038 ; line mean=-7.512e-05       |
-|        LROC NAC       |      [link](examples/lrocnac_isis_cmp.ipynb)      | sub-pixel; in testing for production |      sample mean=-0.003; line mean=-0.0006      |                   sample mean=0.0005	line mean=0.003                   |
-| Kaguya Terrain Camera |     [link](examples/kaguya_tc_isis_cmp.ipynb)     | barely sub-pixel; in testing |     sample mean=0.0001; line mean=0.00003    |      sample mean=0.009; line mean=-1.242      |
-|   Messenger MDIS NAC  | [link](examples/messenger_mdisnac_isis_cmp.ipynb) |  sub-pixel; in testing for production |      sample mean=-0.01; line mean=-0.003     |       sample mean=0.01; line mean=0.003      |
-|  Cassini ISS NAC      |      [link](examples/cassini_isis_nac_cmp.ipynb)      |  sub-pixel; in testing for production  |    sample mean=-0.001; line mean=0.01    |     sample mean=0.001; line mean=-0.01     |
-|  Cassini ISS WAC      |      [link](examples/cassini_isis_wac_cmp.ipynb)      |  sub-pixel; in testing for production  |    sample mean=0.001; line mean=0.004    |     sample mean=-0.001; line mean=-0.004     |
-|  Dawn Framing Camera  |      [link](examples/dawn_fc_isis_cmp.ipynb)      |     sub-pixel; in testing for production    | sample mean=-0.02; line mean=0.003 | sample mean=0.02; line mean=-0.003 |
-
-The Difference column (CSM -> ISIS) represents the mean difference in pixels from running usgscsm's *image2ground* and then back to the camera using ISIS3's *campt* (ground2image). The Difference column (ISIS -> CSM) is simply the reverse starting with ISIS3 first with *campt* (image2ground) and then usgscsm's *ground2image*.
