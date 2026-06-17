@@ -35,11 +35,13 @@ release.
 
 ## Unreleased
 
+### Changed
+- The function signature for the GdalDem surface class, removing the need to pass the semimajor and semiminor axes. These values can be pulled from the SRS on the DEM via the `spatial_reference` property on the GeoDataset.
+
 ## [0.4.0] - 2024-05-10
 
 ### Added
 - Added the following sensor utility functions: `phase_angle`, `emission_angle`, `slant_distance`, `target_center_distance`, `sub_spacecraft_point`, `local_radius`, `right_ascension_declination`, `line_resolution`, `sample_resolution`, and `pixel_resolution`.
-
 
 ## [0.3.0] - 2024-04-14
 

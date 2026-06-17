@@ -71,7 +71,7 @@ class GdalDem(EllipsoidDem):
     A raster DEM surface model.
     """
 
-    def __init__(self, dem, semi_major, semi_minor = None, dem_type=None):
+    def __init__(self, dem, dem_type=None):
         """
         Create a GDAL dem from a dem file
 
@@ -86,13 +86,18 @@ class GdalDem(EllipsoidDem):
         dem_type : str
                    The type of DEM, either height above reference ellipsoid or radius.
         """
+        self.dem = GeoDataset(dem)
+
+        semi_major = self.dem.spatial_reference.GetSemiMajor()
+        semi_minor = self.dem.spatial_reference.GetSemiMinor()
         super().__init__(semi_major, semi_minor)
+        
         dem_types = ('height', 'radius')
         if dem_type is None:
             dem_type = dem_types[0]
         if dem_type not in dem_types:
             raise ValueError(f'DEM type {dem_type} is not a valid option.')
-        self.dem = GeoDataset(dem)
+        
         self.dem_type = dem_type
 
     def get_raster_value(self, lat, lon):

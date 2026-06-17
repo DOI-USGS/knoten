@@ -1,6 +1,11 @@
 import datetime
 import json
+import logging
 import os
+
+# Set the logging level
+logging.basicConfig(level='INFO')
+logger = logging.getLogger()
 
 from csmapi import csmapi
 import jinja2
@@ -230,6 +235,7 @@ def _(dem: EllipsoidDem, image_pt, camera, max_its = 20, tolerance = 0.0001, dem
                                               intersection.z,
                                               errcheck=True)
         height = dem.get_height(lat, lon)
+        logger.debug(f'Elevation: {height}')
         if height is None:
             raise ValueError(f'No DEM height at {lat}, {lon}')
 

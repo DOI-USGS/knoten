@@ -29,7 +29,9 @@ class TestGdalDem(unittest.TestCase):
             mockInstance = mockDataset.return_value
             mockInstance.latlon_to_pixel.return_value = (1,2)
             mockInstance.read_array.return_value = [[100]]
-            test_dem = surface.GdalDem('TestDem.cub', 3396190, 3376200)
+            mockInstance.spatial_reference.GetSemiMajor.return_value = 3396190
+            mockInstance.spatial_reference.GetSemiMinor.return_value = 3396190
+            test_dem = surface.GdalDem('TestDem.cub')
             self.assertEqual(test_dem.get_height(0, 0), 100)
             self.assertEqual(test_dem.get_height(0, 180), 100)
             self.assertEqual(test_dem.get_height(90, 300), 100)
@@ -39,7 +41,9 @@ class TestGdalDem(unittest.TestCase):
             mockInstance = mockDataset.return_value
             mockInstance.latlon_to_pixel.return_value = (1,2)
             mockInstance.read_array.return_value = [[3396190]]
-            test_dem = surface.GdalDem('TestDem.cub', 3396190, 3376200, 'radius')
+            mockInstance.spatial_reference.GetSemiMajor.return_value = 3396190
+            mockInstance.spatial_reference.GetSemiMinor.return_value = 3376200
+            test_dem = surface.GdalDem('TestDem.cub', 'radius')
             self.assertEqual(test_dem.get_height(0, 0), 0)
             self.assertEqual(test_dem.get_height(0, 180), 0)
             self.assertEqual(test_dem.get_height(90, 300), 19990)
@@ -49,7 +53,9 @@ class TestGdalDem(unittest.TestCase):
             mockInstance = mockDataset.return_value
             mockInstance.latlon_to_pixel.return_value = (1,2)
             mockInstance.read_array.return_value = [[3396190]]
-            test_dem = surface.GdalDem('TestDem.cub', 3396190, 3376200, 'radius')
+            mockInstance.spatial_reference.GetSemiMajor.return_value = 3396190
+            mockInstance.spatial_reference.GetSemiMinor.return_value = 3396190
+            test_dem = surface.GdalDem('TestDem.cub', 'radius')
             self.assertEqual(test_dem.get_radius(0, 0), 3396190)
             self.assertEqual(test_dem.get_radius(0, 180), 3396190)
             self.assertEqual(test_dem.get_radius(90, 300), 3396190)
@@ -59,10 +65,12 @@ class TestGdalDem(unittest.TestCase):
             mockInstance = mockDataset.return_value
             mockInstance.latlon_to_pixel.return_value = (1,2)
             mockInstance.read_array.return_value = [[100]]
-            test_dem = surface.GdalDem(mockInstance, 3396190, 3376200)
+            mockInstance.spatial_reference.GetSemiMajor.return_value = 3396190
+            mockInstance.spatial_reference.GetSemiMinor.return_value = 3396190
+            test_dem = surface.GdalDem(mockInstance)
             self.assertEqual(test_dem.get_radius(0, 0), 3396290)
             self.assertEqual(test_dem.get_radius(0, 180), 3396290)
-            self.assertEqual(test_dem.get_radius(90, 300), 3376300)
+            self.assertEqual(test_dem.get_radius(90, 300), 3396290)
 
     def tearDown(self):
         pass
